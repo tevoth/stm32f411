@@ -1,0 +1,18 @@
+to run openocd:
+openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -c "tcl_port 6667" -c "telnet_port 4445"
+
+to run gdb-multiarch
+gdb-multiarch firmware.elf
+> target extended-remote localhost:3333
+> monitor reset init
+> monitor flash write_image erase firmware.elf
+> monitor reset init
+> monitor resume
+...
+> kill
+> /* set breakpoints etc */
+> run
+
+
+somethings:
+> monitor halt
