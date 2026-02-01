@@ -14,9 +14,9 @@ void button_init() {
 
 bool get_button_state() {
   if(GPIOA->IDR & BTN_PIN) {
-    return false;
-  } else {
     return true;
+  } else {
+    return false;
   }
 }
 
