@@ -8,6 +8,7 @@
 
 void button_init() {
   RCC->AHB1ENR |= GPIOAEN;
+  // set button pull-up
   GPIOA->PUPDR |=  (1U<<0);
   GPIOA->PUPDR &= ~(1U<<1);
   GPIOA->OTYPER &= ~(1U<<0);
@@ -17,15 +18,16 @@ void button_init() {
 
 bool get_button_state() {
   if(GPIOA->IDR & BTN_PIN) {
-    return false;
-  } else {
     return true;
+  } else {
+    return false;
   }
 }
 
 void led_init() {
   RCC->AHB1ENR |= GPIOCEN;
   GPIOA->OTYPER &= ~(1U<<13);
+  // set led pull-up
   GPIOA->PUPDR |=  (1U<<26);
   GPIOA->PUPDR &= ~(1U<<27);
   GPIOC->MODER |=  (1U<<26);  //  19: Set bit 10 to 1
