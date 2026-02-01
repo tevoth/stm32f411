@@ -7,12 +7,11 @@
 void button_init() {
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   // set button pull-up
-  GPIOA->PUPDR |=  (1U<<0);
-  GPIOA->PUPDR &= ~(1U<<1);
-  GPIOA->OTYPER &= ~(1U<<0);
+  GPIOA->PUPDR |=  (GPIO_PUPDR_PUPDR0_0);
+  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR0_1);
   GPIOA->MODER &= ~(GPIO_MODER_MODER1_0);
   GPIOA->MODER &= ~(GPIO_MODER_MODER1_1);
-  //GPIOA->MODER &= ~(GPIO_MODER_MODER1_Msk);
+  GPIOA->OTYPER &= ~(1U<<0);
 } 
 
 bool get_button_state() {
@@ -25,11 +24,11 @@ bool get_button_state() {
 
 void led_init() {
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+  GPIOA->PUPDR  |=  (GPIO_PUPDR_PUPDR13_0);
+  GPIOA->PUPDR  &= ~(GPIO_PUPDR_PUPDR13_1);
+  GPIOC->MODER  |=  (GPIO_MODER_MODER13_0);
+  GPIOC->MODER  &= ~(GPIO_MODER_MODER13_1);
   GPIOA->OTYPER &= ~(1U<<13);
-  GPIOA->PUPDR |=  (1U<<26);
-  GPIOA->PUPDR &= ~(1U<<27);
-  GPIOC->MODER |=  (GPIO_MODER_MODER13_0);
-  GPIOC->MODER &= ~(GPIO_MODER_MODER13_1);
 }
 
 void led_on() {
