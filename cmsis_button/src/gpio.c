@@ -8,6 +8,9 @@
 
 void button_init() {
   RCC->AHB1ENR |= GPIOAEN;
+  GPIOA->PUPDR |=  (1U<<0);
+  GPIOA->PUPDR &= ~(1U<<1);
+  GPIOA->OTYPER &= ~(1U<<0);
   GPIOA->MODER &= ~(1U<<0);
   GPIOA->MODER &= ~(1U<<1);
 } 
@@ -22,8 +25,11 @@ bool get_button_state() {
 
 void led_init() {
   RCC->AHB1ENR |= GPIOCEN;
-  GPIOC->MODER  |= (1U<<26);  //  19: Set bit 10 to 1
-  GPIOC->MODER  &= ~(1U<<27); //  20: Set bit 11 to 0
+  GPIOA->OTYPER &= ~(1U<<13);
+  GPIOA->PUPDR |=  (1U<<26);
+  GPIOA->PUPDR &= ~(1U<<27);
+  GPIOC->MODER |=  (1U<<26);  //  19: Set bit 10 to 1
+  GPIOC->MODER &= ~(1U<<27); //  20: Set bit 11 to 0
 }
 
 void led_on() {
