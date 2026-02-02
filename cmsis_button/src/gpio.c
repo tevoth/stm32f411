@@ -1,7 +1,5 @@
 #include "gpio.h"
 
-#define LED_BS13      (1U<<13)
-#define LED_BR13      (1U<<29)
 #define BTN_PIN       (1U<<0)
 
 void button_init() {
