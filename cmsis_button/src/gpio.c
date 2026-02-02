@@ -11,7 +11,7 @@ void button_init() {
   GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR0_1);
   GPIOA->MODER &= ~(GPIO_MODER_MODER1_0);
   GPIOA->MODER &= ~(GPIO_MODER_MODER1_1);
-  GPIOA->OTYPER &= ~(1U<<0);
+  GPIOA->OTYPER &= ~(GPIO_OTYPER_OT0);
 } 
 
 bool get_button_state() {
@@ -28,13 +28,15 @@ void led_init() {
   GPIOA->PUPDR  &= ~(GPIO_PUPDR_PUPDR13_1);
   GPIOC->MODER  |=  (GPIO_MODER_MODER13_0);
   GPIOC->MODER  &= ~(GPIO_MODER_MODER13_1);
-  GPIOA->OTYPER &= ~(1U<<13);
+  GPIOA->OTYPER &= ~(GPIO_OTYPER_OT13);
 }
 
 void led_on() {
-  GPIOC->BSRR |= LED_BS13;
+  // set
+  GPIOC->BSRR |= GPIO_BSRR_BS13;
 }
 
 void led_off() {
-  GPIOC->BSRR |= LED_BR13;
+  // reset
+  GPIOC->BSRR |= GPIO_BSRR_BR13;
 }
