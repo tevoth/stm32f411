@@ -1,0 +1,17 @@
+#include "stm32f4xx.h"
+
+
+void system_init(void)
+{
+    // volatile char rcc_cr_hsion = RCC_CR_HSION;
+    // volatile int64_t rcc_cr = rcc->cr;
+    RCC->CR |= RCC_CR_HSION;
+    while (!(RCC->CR & RCC_CR_HSIRDY));
+
+    RCC->CFGR &= ~RCC_CFGR_SW;
+    RCC->CFGR |= RCC_CFGR_SW_HSI;
+
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI);
+
+}
+
