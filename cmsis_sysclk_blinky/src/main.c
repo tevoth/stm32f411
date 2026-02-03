@@ -5,6 +5,7 @@
 #include "system_init.h"
 
 int main(void) {
+
   system_init();
   led_init();
   while(1) {
