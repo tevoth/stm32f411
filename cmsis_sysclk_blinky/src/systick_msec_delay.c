@@ -3,7 +3,7 @@
 
 #define CTRL_COUNTFLAG (1U<<16)
 
-void delay(uint32_t delay) {
+void systick_msec_delay(uint32_t delay) {
   SysTick->CTRL = 0; // clear clock
   SysTick->VAL  = 0;
   SysTick->LOAD = 15999;
