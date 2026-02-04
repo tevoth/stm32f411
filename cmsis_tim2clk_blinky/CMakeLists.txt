@@ -58,6 +58,7 @@ target_compile_options(${TARGET_NAME}.elf PRIVATE
   -ffunction-sections
   -fdata-sections
   -fno-common
+  -ffreestanding
   -Wall -Wextra -Wundef -Wshadow -Wdouble-promotion
   -Wno-unused-parameter
   $<$<CONFIG:Debug>:-Og -g3>
