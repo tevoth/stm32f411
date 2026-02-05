@@ -18,6 +18,7 @@ extern uint32_t _estack;
 extern uint32_t _etext;
 extern uint32_t _sdata;
 extern uint32_t _edata;
+extern uint32_t _sidata;
 extern uint32_t _sbss;
 extern uint32_t _ebss;
 
@@ -230,7 +231,7 @@ void Reset_Handler(void)
     bss_mem_size  /= 4;
 	
 	// Initialize pointers to the source and destination of the .data section
-	uint32_t *p_src_mem =  (uint32_t *)&_etext;
+	uint32_t *p_src_mem =  (uint32_t *)&_sidata;
 	uint32_t *p_dest_mem = (uint32_t *)&_sdata;
 	
 	/*Copy .data section from FLASH to SRAM*/

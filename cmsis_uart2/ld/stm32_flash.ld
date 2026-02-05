@@ -40,18 +40,19 @@ SECTIONS
     KEEP(*(.init_array*))
     KEEP(*(.fini_array*))
     . = ALIGN(4);
-    _etext = .;     /* end of FLASH image used as .data load address */
+    _etext = .;
   } > FLASH
 
-  /* Initialized data in SRAM, loaded from FLASH after _etext */
-  .data : AT(_etext)
+  .data : 
   {
     . = ALIGN(4);
     _sdata = .;
     *(.data*)
     . = ALIGN(4);
     _edata = .;
-  } > SRAM
+  } > SRAM AT>FLASH
+  /* start of data in FLASH */
+  _sidata = LOADADDR(.data);
 
   /* Zero-initialized data in SRAM */
   .bss (NOLOAD) :
