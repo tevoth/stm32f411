@@ -80,7 +80,7 @@ target_link_options(${TARGET_NAME}.elf PRIVATE
   -Wl,-Map=${CMAKE_BINARY_DIR}/${TARGET_NAME}.map
   -Wl,--gc-sections
   -Wl,--print-memory-usage
-  --specs=nano.specs
+#  --specs=nano.specs
   --specs=nosys.specs
 )
 

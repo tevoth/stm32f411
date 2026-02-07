@@ -9,9 +9,18 @@
 static void uart_set_baudrate(uint32_t periph_clk, uint32_t baudrate);
 static void uart_write(int ch);
 
+
+
 int __io_putchar(int ch) {
   uart_write(ch);
   return ch;
+}
+
+int _write(int file, char *ptr, int len) {
+    for (int i = 0; i < len; i++) {
+        __io_putchar(*ptr++);
+    }
+    return len;
 }
 
 void uart_init(void) {
