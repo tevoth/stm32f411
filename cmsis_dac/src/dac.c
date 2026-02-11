@@ -20,6 +20,10 @@ void dac_init(void) {
   // Set conversion sequence length
   ADC1->SQR1 &= ~(ADC_SQR1_L_Msk);
 
+  // Set sample time (84 cycles)
+  ADC1->SMPR2 &= ~(7 << (1 * 3));
+  ADC1->SMPR2 |= (4 << (1 * 3));
+
   // Enable ADC 
   ADC1->CR2 |= ADC_CR2_ADON; 
 
