@@ -13,8 +13,9 @@ void dac_init(void) {
   // enable clock access to ADC unit
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 
-  // Set conversion sequence start at first ADC channel (PA1)???
-  ADC1->SQR3 &= ~(ADC_SQR3_SQ1_Msk);
+  // Select ADC channel PA1
+  ADC1->SQR3 &= ~(ADC_SQR3_SQ1_Msk); 
+  ADC1->SQR3 |= ADC_SQR3_SQ1_0;
 
   // Set conversion sequence length
   ADC1->SQR1 &= ~(ADC_SQR1_L_Msk);
