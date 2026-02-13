@@ -2,8 +2,7 @@
 #include "stm32f4xx.h"
 #include "uart.h"
 
-//  #define UART_BAUDRATE 115200
-#define UART_BAUDRATE 9600
+#define UART_BAUDRATE 115200
 #define SYS_FREQ      16000000
 #define APB2_CLK      SYS_FREQ
 
