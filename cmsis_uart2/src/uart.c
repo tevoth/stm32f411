@@ -5,12 +5,10 @@
 //  #define UART_BAUDRATE 115200
 #define UART_BAUDRATE 9600
 #define SYS_FREQ      16000000
-#define APB1_CLK      SYS_FREQ
+#define APB2_CLK      SYS_FREQ
 
 static void uart_set_baudrate(uint32_t periph_clk, uint32_t baudrate);
 static void uart_write(int ch);
-
-
 
 int __io_putchar(int ch) {
   uart_write(ch);
@@ -38,7 +36,7 @@ void uart_init(void) {
   // enable clock to access uart2
   RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 
-  uart_set_baudrate(APB1_CLK, UART_BAUDRATE);
+  uart_set_baudrate(APB2_CLK, UART_BAUDRATE);
 
   USART1->CR1 |= USART_CR1_TE;
   USART1->CR1 |= USART_CR1_UE;
