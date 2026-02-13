@@ -24,14 +24,11 @@ int main(void) {
     accel_z = (int16_t)((data_buffer[5] << 8) | data_buffer[4]);
 
     // convert raw data to g values;     
-    accel_x_g = accel_x * 0.0078;
-    accel_y_g = accel_y * 0.0078;
-    accel_z_g = accel_z * 0.0078;
+    float accel_g_x = accel_x * 0.0078f;
+    float accel_g_y = accel_y * 0.0078f;
+    float accel_g_z = accel_z * 0.0078f;
 
-    unsigned int t_accel_x = 1;
-    unsigned int t_accel_y = 2;
-    unsigned int t_accel_z = 3;
-    printf("p_accel_x : %u p_accel_y : %u p_accel_z : %u\n", t_accel_x, t_accel_y, t_accel_z);
+    printf("accel_x : %x accel_y : %x accel_z : %x\n", accel_x, accel_y, accel_z);
   }
   return 0;
 }
