@@ -15,4 +15,4 @@
 void adxl_init (void);
 void adxl_read(uint8_t address, uint8_t * rxdata);
 uint8_t adxl_read_reg(uint8_t address);
-uint8_t adx1_device_present(void);
+uint8_t adxl_device_present(void);

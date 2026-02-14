@@ -11,8 +11,8 @@ void spi_gpio_init(void) {
   }
 
   // Set PA9 as output pin
-  GPIOA->MODER |=  (1U << (9 * 2));
-  GPIOA->MODER &= ~(2U << (9 * 2));
+  GPIOA->MODER |=  (1U << (4 * 2));
+  GPIOA->MODER &= ~(2U << (4 * 2));
 
   // default CS high (inactive)
   GPIOA->ODR |= (1U << 4);

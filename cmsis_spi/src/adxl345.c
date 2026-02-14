@@ -1,6 +1,6 @@
-#include "adx1345.h"
+#include "adxl345.h"
 
-void adxl_read(uint8_t address, uint8_t * rxdata)
+void adxl_read_bytes(uint8_t address, uint8_t * rxdata)
 {
   /*Set read operation*/
   address |= ADXL345_READ_OPERATION;
