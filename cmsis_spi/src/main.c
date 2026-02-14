@@ -11,9 +11,15 @@ double accel_x_g, accel_y_g, accel_z_g;
 uint8_t data_buffer[6];
 
 int main(void) {
+  uint8_t devid;
+
   led_init();
   uart_init();
   adxl_init();
+
+  devid = adxl_read_reg(ADXL345_REG_DEVID);
+  printf("ADXL345 DEVID read: 0x%02X (%s)\n", devid, 
+    (devid == ADXL345_DEVICE_ID) ? "OK" : "BAD");
   while(1) {
     led_toggle();
     adxl_read(ADXL345_REG_DATA_START, data_buffer);
@@ -29,6 +35,8 @@ int main(void) {
     float accel_g_z = accel_z * 0.0078f;
 
     printf("accel_x : %x accel_y : %x accel_z : %x\n", accel_x, accel_y, accel_z);
+
+    for (int i = 0; i < 100000; i++) {}
   }
   return 0;
 }

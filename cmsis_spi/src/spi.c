@@ -81,6 +81,7 @@ void spi1_transmit(uint8_t *data, uint32_t size) {
 void spi1_receive(uint8_t *data, uint32_t size) {
   while (size) {
     // set dummy data set generate SPI clock
+    while (!(SPI1->SR & (SPI_SR_TXE))) {}
     SPI1->DR = 0;
     // wait for RXNE flag to be set
     while (!(SPI1->SR & (SPI_SR_RXNE))) {}
