@@ -1,13 +1,8 @@
 #include "spi.h"
-#define SPI1EN (1U<<12)
-#define GPIOAEN (1U<<0)
-#define SR_TXE  (1U<<1)
-#define SR_RXNE (1U<<1)
-#define SR_BSY  (1U<<8)
 
 void spi_gpio_init(void) {
   // enable clock access to GPIOA
-  RCC->AHB1ENR |= GPIOAEN;
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 
   // Set PA5 AF
   for (uint16_t pin = 5; pin < 8; pin++) {
@@ -18,6 +13,9 @@ void spi_gpio_init(void) {
   // Set PA9 as output pin
   GPIOA->MODER |=  (1U << (9 * 2));
   GPIOA->MODER &= ~(2U << (9 * 2));
+
+  // default CS high (inactive)
+  GPIOA->ODR |= (1U << 4);
 
   // Set PA5, PA6, PA7 to AF type SPI
   for (uint16_t pin = 5; pin < 8; pin++) {
@@ -30,7 +28,7 @@ void spi_gpio_init(void) {
 
 void spi1_config(void) {
   // Enable clock access to SPI1
-  RCC->APB2ENR |= SPI1EN;
+  RCC->APB2ENR |= (RCC_APB2ENR_SPI1EN);
   
   // Set clock to fPClk/4
   SPI1->CR1 |=  (1U << 3);
@@ -38,24 +36,24 @@ void spi1_config(void) {
   SPI1->CR1 &= ~(1U << 5);
 
   // Set CPOL and CPHA to 1
-  SPI1->CR1 |= (1U << 0);
-  SPI1->CR1 |= (1U << 1);
+  SPI1->CR1 |= (SPI_CR1_CPHA);
+  SPI1->CR1 |= (SPI_CR1_CPOL);
 
   // Set MSB first
-  SPI1->CR1 &= ~(1U << 7);
+  SPI1->CR1 &= ~(SPI_CR1_LSBFIRST);
   
-  // Set Master
-  SPI1->CR1 |= (1U << 2);
+  // Set as master
+  SPI1->CR1 |= (SPI_CR1_MSTR);
 
   // Set 8-bit data mode
-  SPI1->CR1 &= ~(1U << 11);
+  SPI1->CR1 &= ~(SPI_CR1_DFF);
 
   // Select software slave management 
-  SPI1->CR1 |= (1 << 8);
-  SPI1->CR1 |= (1 << 9);
+  SPI1->CR1 |= (SPI_CR1_SSI);
+  SPI1->CR1 |= (SPI_CR1_SSM);
 
   // Enable SPI module
-  SPI1->CR1 |= (1 << 6);
+  SPI1->CR1 |= (SPI_CR1_SPE);
 }
 
 void spi1_transmit(uint8_t *data, uint32_t size) {
@@ -63,17 +61,17 @@ void spi1_transmit(uint8_t *data, uint32_t size) {
   uint8_t  temp;
   while (i < size) {
     // wait for TXE set
-    while (!(SPI1->SR & (SR_TXE))) {}
+    while (!(SPI1->SR & (SPI_SR_TXE))) {}
     
     // data ready, right to data register
     SPI1->DR = data[i];
     i++;
   }
   // wait until TXE is set
-  while (!(SPI1->SR & (SR_TXE))) {}
+  while (!(SPI1->SR & (SPI_SR_TXE))) {}
 
   // wait for BUSY flag to reset
-  while ((SPI1->SR & (SR_BSY))) {}
+  while ((SPI1->SR & (SPI_SR_BSY))) {}
 
   // clear flags
   temp = SPI1->DR;
@@ -82,10 +80,10 @@ void spi1_transmit(uint8_t *data, uint32_t size) {
 
 void spi1_receive(uint8_t *data, uint32_t size) {
   while (size) {
-    // set dummy data
+    // set dummy data set generate SPI clock
     SPI1->DR = 0;
     // wait for RXNE flag to be set
-    while (!(SPI1->SR & (SR_RXNE))) {}
+    while (!(SPI1->SR & (SPI_SR_RXNE))) {}
     // read data
     *data++ = (SPI1->DR);
     size--;
@@ -93,9 +91,9 @@ void spi1_receive(uint8_t *data, uint32_t size) {
 }
 
 void cs_enable(void) {
-  GPIOA->ODR &= ~(1U << 9);
+  GPIOA->ODR &= ~(1U << 4);
 }
 
 void cs_disable(void) {
-  GPIOA->ODR |=  (1U << 9);
+  GPIOA->ODR |=  (1U << 4);
 }
