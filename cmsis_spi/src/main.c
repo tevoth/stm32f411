@@ -34,7 +34,10 @@ int main(void) {
     float accel_g_y = accel_y * 0.0078f;
     float accel_g_z = accel_z * 0.0078f;
 
-    printf("accel_x : %x accel_y : %x accel_z : %x\n", accel_x, accel_y, accel_z);
+    printf("accel_x: %6d (0x%04X) accel_y: %6d (0x%04X) accel_z: %6d (0x%04X)\n",
+      accel_x, (uint16_t)accel_x,
+      accel_y, (uint16_t)accel_y,
+      accel_z, (uint16_t)accel_z);
 
     for (int i = 0; i < 100000; i++) {}
   }

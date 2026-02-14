@@ -1,36 +1,28 @@
 #include "adx1345.h"
 
+void adxl_read_bytes(uint8_t address, uint8_t *rxdata, uint8_t len)
+{
+  uint8_t read_cmd = address | ADXL345_READ_OPERATION;
+
+  if (len > 1) {
+    read_cmd |= ADXL345_MULTI_BYTE_ENABLE;
+  }
+
+  cs_enable();
+  spi1_transmit(&read_cmd, 1);
+  spi1_receive(rxdata, len);
+  cs_disable();
+}
+
 void adxl_read(uint8_t address, uint8_t * rxdata)
 {
-  /*Set read operation*/
-  address |= ADXL345_READ_OPERATION;
-
-  /*Enable multi-byte*/
-  address |= ADXL345_MULTI_BYTE_ENABLE;
-
-  /*Pull cs line low to enable slave*/
-  cs_enable();
-
-  /*Send address*/
-  spi1_transmit(&address,1);
-
-  /*Read 6 bytes */
-  spi1_receive(rxdata,6);
-
-  /*Pull cs line high to disable slave*/
-  cs_disable();
+  adxl_read_bytes(address, rxdata, 6);
 }
 
 uint8_t adxl_read_reg(uint8_t address)
 {
-  uint8_t read_cmd = address | ADXL345_READ_OPERATION;
   uint8_t value;
-
-  cs_enable();
-  spi1_transmit(&read_cmd, 1);
-  spi1_receive(&value, 1);
-  cs_disable();
-
+  adxl_read_bytes(address, &value, 1);
   return value;
 }
 
