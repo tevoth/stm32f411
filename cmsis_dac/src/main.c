@@ -16,7 +16,7 @@ int main(void) {
     volatile unsigned int value = dac_read(); 
     printf("HELLO FROM STM32...%u\n",value); 
     count = count + 1;
-    for(int i = 0; i < 1000000; i++) {}
+    for (volatile int i = 0; i < 1000000; i++) {}
   }
   return 0;
 }

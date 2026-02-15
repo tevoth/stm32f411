@@ -39,7 +39,7 @@ int main(void) {
       accel_y, (uint16_t)accel_y,
       accel_z, (uint16_t)accel_z);
 
-    for (int i = 0; i < 100000; i++) {}
+    for (volatile int i = 0; i < 100000; i++) {}
   }
   return 0;
 }
