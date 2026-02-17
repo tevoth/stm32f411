@@ -7,7 +7,6 @@
 #include "systick_msec_delay.h"
 
 int16_t accel_x, accel_y, accel_z;
-double accel_x_g, accel_y_g, accel_z_g;
 
 uint8_t data_buffer[6];
 
@@ -26,15 +25,15 @@ int main(void) {
     accel_y = (int16_t)((data_buffer[3] << 8) | data_buffer[2]);
     accel_z = (int16_t)((data_buffer[5] << 8) | data_buffer[4]);
 
-    // convert raw data to g values;     
-    float accel_g_x = accel_x * 0.0078f;
-    float accel_g_y = accel_y * 0.0078f;
-    float accel_g_z = accel_z * 0.0078f;
+    // convert raw data to milli-g (mg) using ADXL345 scale factor (~3.9 mg/LSB at +-4g)
+    int32_t accel_x_mg = (int32_t)accel_x * 39 / 10;
+    int32_t accel_y_mg = (int32_t)accel_y * 39 / 10;
+    int32_t accel_z_mg = (int32_t)accel_z * 39 / 10;
 
-    printf("accel_x : %6d (0x%04X) accel_y : %6d (0x%04X) accel_z : %6d (0x%04X) \n", 
-      accel_x, (uint16_t)accel_x,
-      accel_y, (uint16_t)accel_y,
-      accel_z, (uint16_t)accel_z);
+    printf("accel_x : %6d (0x%04X, %ld mg) accel_y : %6d (0x%04X, %ld mg) accel_z : %6d (0x%04X, %ld mg)\n",
+      accel_x, (uint16_t)accel_x, accel_x_mg,
+      accel_y, (uint16_t)accel_y, accel_y_mg,
+      accel_z, (uint16_t)accel_z, accel_z_mg);
 
     systick_msec_delay(100);
   }

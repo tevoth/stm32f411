@@ -1,4 +1,5 @@
 #include "adxl345.h"
+#include <stdio.h>
 
 void adxl_read(uint8_t address, uint8_t * rxdata)
 {
