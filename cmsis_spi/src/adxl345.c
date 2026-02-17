@@ -63,18 +63,23 @@ void adxl_write (uint8_t address, uint8_t value)
 
 void adxl_init (void)
 {
-  /*Enable SPI gpio*/
+  // Enable SPI gpio
   spi_gpio_init();
 
-  /*Config SPI*/
+  // Config SPI
   spi1_config();
 
-  /*Set data format range to +-4g*/
+  // Set data format range to +-4g
   adxl_write (ADXL345_REG_DATA_FORMAT, ADXL345_RANGE_4G);
 
-  /*Reset all bits*/
+  // Reset all bits
   adxl_write (ADXL345_REG_POWER_CTL, ADXL345_RESET);
 
-  /*Configure power control measure bit*/
+  // Configure power control measure bit
   adxl_write (ADXL345_REG_POWER_CTL, ADXL345_MEASURE_BIT);
+
+  // Check device
+  uint8_t devid = adxl_read_reg(ADXL345_REG_DEVID);
+  printf("ADXL345 DEVID read: 0x%02X (%s)\n", devid, 
+    (devid == ADXL345_DEVICE_ID) ? "OK" : "BAD");
 }

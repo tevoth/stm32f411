@@ -12,6 +12,7 @@
 #define ADXL345_MULTI_BYTE_ENABLE (0x40)
 #define ADXL345_READ_OPERATION (0x80)
 #define ADXL345_DEVICE_ID (0xE5)
+
 void adxl_init (void);
 void adxl_read(uint8_t address, uint8_t * rxdata);
 uint8_t adxl_read_reg(uint8_t address);
