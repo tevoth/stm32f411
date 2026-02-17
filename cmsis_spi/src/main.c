@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "stm32f4xx.h"
 #include "led.h"
 #include "uart.h"
@@ -7,7 +8,6 @@
 #include "systick_msec_delay.h"
 
 int16_t accel_x, accel_y, accel_z;
-double accel_x_g, accel_y_g, accel_z_g;
 
 uint8_t data_buffer[6];
 
@@ -26,15 +26,18 @@ int main(void) {
     accel_y = (int16_t)((data_buffer[3] << 8) | data_buffer[2]);
     accel_z = (int16_t)((data_buffer[5] << 8) | data_buffer[4]);
 
-    // convert raw data to g values
-    accel_x_g = accel_x * 0.0078;
-    accel_y_g = accel_y * 0.0078;
-    accel_z_g = accel_z * 0.0078;
+    // convert raw data to fixed-point g values (x10000) to avoid float printf
+    int32_t accel_x_g_x10000 = (int32_t)accel_x * 78;
+    int32_t accel_y_g_x10000 = (int32_t)accel_y * 78;
+    int32_t accel_z_g_x10000 = (int32_t)accel_z * 78;
 
-    printf("accel_x : %6d (0x%04X, %+0.3f g) accel_y : %6d (0x%04X, %+0.3f g) accel_z : %6d (0x%04X, %+0.3f g)\n",
-      accel_x, (uint16_t)accel_x, accel_x_g,
-      accel_y, (uint16_t)accel_y, accel_y_g,
-      accel_z, (uint16_t)accel_z, accel_z_g);
+    printf("accel_x : %6d (0x%04X, %c%ld.%04ld g) accel_y : %6d (0x%04X, %c%ld.%04ld g) accel_z : %6d (0x%04X, %c%ld.%04ld g)\n",
+      accel_x, (uint16_t)accel_x,
+      (accel_x_g_x10000 < 0) ? '-' : '+', labs(accel_x_g_x10000) / 10000L, labs(accel_x_g_x10000) % 10000L,
+      accel_y, (uint16_t)accel_y,
+      (accel_y_g_x10000 < 0) ? '-' : '+', labs(accel_y_g_x10000) / 10000L, labs(accel_y_g_x10000) % 10000L,
+      accel_z, (uint16_t)accel_z,
+      (accel_z_g_x10000 < 0) ? '-' : '+', labs(accel_z_g_x10000) / 10000L, labs(accel_z_g_x10000) % 10000L);
 
     systick_msec_delay(100);
   }
