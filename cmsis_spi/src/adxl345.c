@@ -70,8 +70,8 @@ void adxl_init (void)
   // Config SPI
   spi1_config();
 
-  // Set data format range to +-4g
-  adxl_write (ADXL345_REG_DATA_FORMAT, ADXL345_RANGE_4G);
+  // Set data format range to +-4g and full range mode
+  adxl_write(ADXL345_REG_DATA_FORMAT, ADXL345_FULL_RES | ADXL345_RANGE_4G);
 
   // Reset all bits
   adxl_write (ADXL345_REG_POWER_CTL, ADXL345_RESET);
