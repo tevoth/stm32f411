@@ -26,15 +26,15 @@ int main(void) {
     accel_y = (int16_t)((data_buffer[3] << 8) | data_buffer[2]);
     accel_z = (int16_t)((data_buffer[5] << 8) | data_buffer[4]);
 
-    // convert raw data to g values;     
-    float accel_g_x = accel_x * 0.0078f;
-    float accel_g_y = accel_y * 0.0078f;
-    float accel_g_z = accel_z * 0.0078f;
+    // convert raw data to g values
+    accel_x_g = accel_x * 0.0078;
+    accel_y_g = accel_y * 0.0078;
+    accel_z_g = accel_z * 0.0078;
 
-    printf("accel_x : %6d (0x%04X) accel_y : %6d (0x%04X) accel_z : %6d (0x%04X) \n", 
-      accel_x, (uint16_t)accel_x,
-      accel_y, (uint16_t)accel_y,
-      accel_z, (uint16_t)accel_z);
+    printf("accel_x : %6d (0x%04X, %+0.3f g) accel_y : %6d (0x%04X, %+0.3f g) accel_z : %6d (0x%04X, %+0.3f g)\n",
+      accel_x, (uint16_t)accel_x, accel_x_g,
+      accel_y, (uint16_t)accel_y, accel_y_g,
+      accel_z, (uint16_t)accel_z, accel_z_g);
 
     systick_msec_delay(100);
   }
