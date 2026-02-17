@@ -4,6 +4,7 @@
 #include "led.h"
 #include "uart.h"
 #include "adxl345.h"
+#include "systick_msec_delay.h"
 
 int16_t accel_x, accel_y, accel_z;
 double accel_x_g, accel_y_g, accel_z_g;
@@ -39,7 +40,7 @@ int main(void) {
       accel_y, (uint16_t)accel_y,
       accel_z, (uint16_t)accel_z);
 
-    for (volatile int i = 0; i < 100000; i++) {}
+    systick_msec_delay(1);
   }
   return 0;
 }
