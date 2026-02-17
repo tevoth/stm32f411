@@ -79,6 +79,8 @@ void spi1_transmit(uint8_t *data, uint32_t size) {
 }
 
 void spi1_receive(uint8_t *data, uint32_t size) {
+  uint8_t temp;
+
   while (size) {
     // set dummy data set generate SPI clock
     while (!(SPI1->SR & (SPI_SR_TXE))) {}
@@ -89,6 +91,14 @@ void spi1_receive(uint8_t *data, uint32_t size) {
     *data++ = (SPI1->DR);
     size--;
   }
+
+  // wait until the last frame has fully shifted out before deasserting CS
+  while (!(SPI1->SR & (SPI_SR_TXE))) {}
+  while ((SPI1->SR & (SPI_SR_BSY))) {}
+
+  // clear flags
+  temp = SPI1->DR;
+  temp = SPI1->SR;
 }
 
 void cs_enable(void) {
