@@ -13,7 +13,10 @@ void button_init() {
 } 
 
 bool get_button_state() {
-  if(GPIOA->IDR & BTN_PIN) {
+  // PA0 uses an internal pull-up, so the input reads:
+  // - 1 when released
+  // - 0 when pressed
+  if(!(GPIOA->IDR & BTN_PIN)) {
     return true;
   } else {
     return false;
