@@ -30,10 +30,10 @@ int main(void) {
     int32_t accel_y_mg = (int32_t)accel_y * 39 / 10;
     int32_t accel_z_mg = (int32_t)accel_z * 39 / 10;
 
-    printf("accel_x : %6d (0x%04X, %ld mg) accel_y : %6d (0x%04X, %ld mg) accel_z : %6d (0x%04X, %ld mg)\n",
-      accel_x, (uint16_t)accel_x, accel_x_mg,
-      accel_y, (uint16_t)accel_y, accel_y_mg,
-      accel_z, (uint16_t)accel_z, accel_z_mg);
+    printf("accel_x : %6d (%ld mg) accel_y : %6d (%ld mg) accel_z : %6d (%ld mg)\n",
+      accel_x, accel_x_mg,
+      accel_y, accel_y_mg,
+      accel_z, accel_z_mg);
 
     systick_msec_delay(100);
   }
