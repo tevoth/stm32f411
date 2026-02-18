@@ -58,7 +58,7 @@ target_compile_options(${TARGET_NAME}.elf PRIVATE
   -ffunction-sections
   -fdata-sections
   -fno-common
-  -Wall -Wextra -Wundef -Wshadow -Wdouble-promotion
+  -Wall -Wextra -Wundef -Wshadow -Wdouble-promotion -Werror
   -Wno-unused-parameter
   $<$<CONFIG:Debug>:-Og -g3>
   $<$<CONFIG:Release>:-O3 -g0>
