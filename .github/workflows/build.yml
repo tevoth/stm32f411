@@ -7,20 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  build-all:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - cmsis_blinky
-          - cmsis_button
-          - cmsis_dac
-          - cmsis_spi
-          - cmsis_sysclk_blinky
-          - cmsis_tim2clk_blinky
-          - cmsis_uart1
-          - cmsis_uart2
 
     steps:
       - name: Checkout
@@ -31,8 +19,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi cmake make
 
-      - name: Configure
-        run: cmake -S ${{ matrix.project }} -B ${{ matrix.project }}/build
-
-      - name: Build
-        run: cmake --build ${{ matrix.project }}/build
+      - name: Configure and Build all projects
+        run: |
+          set -e
+          for project in \
+            cmsis_blinky \
+            cmsis_button \
+            cmsis_dac \
+            cmsis_spi \
+            cmsis_sysclk_blinky \
+            cmsis_tim2clk_blinky \
+            cmsis_uart1 \
+            cmsis_uart2; do
+            cmake -S "$project" -B "$project/build"
+            cmake --build "$project/build"
+          done
