@@ -47,8 +47,8 @@ add_executable(${TARGET_NAME}.elf ${APP_SOURCES})
 
 target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${CMAKE_SOURCE_DIR}/inc
-  ${CMAKE_SOURCE_DIR}/CMSIS/Include
-  ${CMAKE_SOURCE_DIR}/CMSIS/Device/ST/STM32F4xx/Include
+  ${CMAKE_SOURCE_DIR}/../CMSIS/Include
+  ${CMAKE_SOURCE_DIR}/../CMSIS/Device/ST/STM32F4xx/Include
 )
 
 # --- Compile options ---
