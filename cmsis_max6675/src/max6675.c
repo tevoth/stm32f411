@@ -1,18 +1,31 @@
 #include "max6675.h"
 #include "spi.h"
 
+static bool max6675_frame_valid(uint16_t raw)
+{
+  // MAX6675 reserved bits must read 0.
+  return (raw & ((1U << 15) | (1U << 1))) == 0U;
+}
+
 bool max6675_read_raw(uint16_t *raw)
 {
   if (raw == 0) {
     return false;
   }
 
-  cs_enable();
-  uint16_t frame = spi1_transfer16(0x0000U);
-  cs_disable();
+  // Retry once to filter occasional invalid bus frames.
+  for (uint32_t attempt = 0; attempt < 2U; attempt++) {
+    cs_enable();
+    uint16_t frame = spi1_transfer16(0x0000U);
+    cs_disable();
 
-  *raw = frame;
-  return true;
+    if (max6675_frame_valid(frame)) {
+      *raw = frame;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool max6675_thermocouple_open(uint16_t raw)
