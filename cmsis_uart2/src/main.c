@@ -10,7 +10,7 @@ int main(void) {
   while(1) {
     led_toggle();
     printf("HELLO FROM STM32...\n"); 
-    for(int i = 0; i < 500000; i++) {}
+    for(volatile int i = 0; i < 500000; i++) {}
   }
   return 0;
 }
