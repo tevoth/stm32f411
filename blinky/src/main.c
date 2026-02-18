@@ -3,6 +3,15 @@
 #define GPIOCEN       (1U<<2)
 #define PIN13         (1U<<13)
 #define LED_PIN       PIN13
+#define RCC_CR_HSION  (1U<<0)
+#define RCC_CR_HSIRDY (1U<<1)
+#define RCC_CFGR_SW_MASK   (3U<<0)
+#define RCC_CFGR_SW_HSI    (0U<<0)
+#define RCC_CFGR_SWS_MASK  (3U<<2)
+#define RCC_CFGR_SWS_HSI   (0U<<2)
+#define RCC_CFGR_HPRE_MASK  (0xFU<<4)
+#define RCC_CFGR_PPRE1_MASK (0x7U<<10)
+#define RCC_CFGR_PPRE2_MASK (0x7U<<13)
 
 typedef struct {
   volatile uint32_t MODER;      // 0x00
@@ -60,20 +69,31 @@ typedef struct {
 
 #define TIMER_BASE 0x40023800UL
 #define TIMER ((timer_t *)TIMER_BASE)
+
+static void system_init(void) {
+  TIMER->CR |= RCC_CR_HSION;
+  while ((TIMER->CR & RCC_CR_HSIRDY) == 0U) {}
+
+  // Normalize bus prescalers to /1 for deterministic timing.
+  TIMER->CFGR &= ~(RCC_CFGR_HPRE_MASK | RCC_CFGR_PPRE1_MASK | RCC_CFGR_PPRE2_MASK);
+
+  TIMER->CFGR &= ~RCC_CFGR_SW_MASK;
+  TIMER->CFGR |= RCC_CFGR_SW_HSI;
+  while ((TIMER->CFGR & RCC_CFGR_SWS_MASK) != RCC_CFGR_SWS_HSI) {}
+}
   
 int main(void) {
+  system_init();
+  //  Enable clock access to GPIOA
+  TIMER->AHB1ENR |= GPIOCEN;
+
+  GPIOC->MODER  |= (1U<<26);  //  19: Set bit 10 to 1
+  GPIOC->MODER  &= ~(1U<<27); //  20: Set bit 11 to 0
+
   while(1) {
-    //  Enable clock access to GPIOA
-    TIMER->AHB1ENR |= GPIOCEN;
-
-    GPIOC->MODER  |= (1U<<26);  //  19: Set bit 10 to 1
-    GPIOC->MODER  &= ~(1U<<27); //  20: Set bit 11 to 0
-
-    while(1) {
-      // toggle LED 
-      GPIOC->ODR ^= LED_PIN;
-      for(volatile int i = 0; i < 5000000; i++){}
-    }
+    // toggle LED 
+    GPIOC->ODR ^= LED_PIN;
+    for(volatile int i = 0; i < 5000000; i++){}
   }
   return 1;
 }
