@@ -4,20 +4,16 @@
 
 void button_init() {
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-  // set button pull-up
-  GPIOA->PUPDR |=  (GPIO_PUPDR_PUPDR0_0);
-  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR0_1);
+  // configure PA0 as input with pull-down so pressed reads high
+  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR0_0);
+  GPIOA->PUPDR |=  (GPIO_PUPDR_PUPDR0_1);
   GPIOA->MODER &= ~(GPIO_MODER_MODER0_0);
   GPIOA->MODER &= ~(GPIO_MODER_MODER0_1);
   GPIOA->OTYPER &= ~(GPIO_OTYPER_OT0);
 } 
 
 bool get_button_state() {
-  if(GPIOA->IDR & BTN_PIN) {
-    return true;
-  } else {
-    return false;
-  }
+  return (GPIOA->IDR & BTN_PIN) != 0U;
 }
 
 void led_init() {
