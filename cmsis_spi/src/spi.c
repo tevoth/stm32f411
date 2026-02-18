@@ -58,7 +58,6 @@ void spi1_config(void) {
 
 void spi1_transmit(uint8_t *data, uint32_t size) {
   uint32_t i = 0;
-  uint8_t  temp;
   while (i < size) {
     // wait for TXE set
     while (!(SPI1->SR & (SPI_SR_TXE))) {}
@@ -74,13 +73,11 @@ void spi1_transmit(uint8_t *data, uint32_t size) {
   while ((SPI1->SR & (SPI_SR_BSY))) {}
 
   // clear flags
-  temp = SPI1->DR;
-  temp = SPI1->SR;
+  (void)SPI1->DR;
+  (void)SPI1->SR;
 }
 
 void spi1_receive(uint8_t *data, uint32_t size) {
-  uint8_t temp;
-
   while (size) {
     // set dummy data set generate SPI clock
     while (!(SPI1->SR & (SPI_SR_TXE))) {}
@@ -97,8 +94,8 @@ void spi1_receive(uint8_t *data, uint32_t size) {
   while ((SPI1->SR & (SPI_SR_BSY))) {}
 
   // clear flags
-  temp = SPI1->DR;
-  temp = SPI1->SR;
+  (void)SPI1->DR;
+  (void)SPI1->SR;
 }
 
 void cs_enable(void) {
