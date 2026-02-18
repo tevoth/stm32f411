@@ -7,13 +7,11 @@ bool max6675_read_raw(uint16_t *raw)
     return false;
   }
 
-  uint8_t rx[2] = {0, 0};
-
   cs_enable();
-  spi1_receive(rx, 2);
+  uint16_t frame = spi1_transfer16(0x0000U);
   cs_disable();
 
-  *raw = (uint16_t)(((uint16_t)rx[0] << 8) | rx[1]);
+  *raw = frame;
   return true;
 }
 

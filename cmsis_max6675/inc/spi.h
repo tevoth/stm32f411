@@ -5,8 +5,6 @@
 
 void spi_gpio_init(void);
 void spi1_config(void);
-void spi1_transmit(uint8_t *data, uint32_t size);
-void spi1_receive(uint8_t *data, uint32_t size);
+uint16_t spi1_transfer16(uint16_t tx_data);
 void cs_enable(void);
 void cs_disable(void);
-
