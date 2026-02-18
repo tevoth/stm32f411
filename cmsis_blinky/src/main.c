@@ -15,7 +15,7 @@ int main(void) {
   while(1) {
     // toggle LED 
     GPIOC->ODR ^= LED_PIN;
-    for(int i = 0; i < 5000000; i++){}
+    for(volatile int i = 0; i < 5000000; i++){}
   }
   return 1;
 }
