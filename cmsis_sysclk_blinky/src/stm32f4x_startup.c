@@ -248,10 +248,13 @@ void Reset_Handler(void)
 		 /*Set bss section to zero*/  
 		*p_dest_mem++ = 0;
 	}
-	
-	    // Call the application's main function.
+	// Call the application's main function.
+	(void)main();
 
-	main();
+	// main() should never return on bare metal; trap if it does.
+	while (1)
+	{
+	}
 }
 
 
