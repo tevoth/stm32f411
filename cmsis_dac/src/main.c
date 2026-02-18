@@ -4,8 +4,10 @@
 #include "led.h"
 #include "uart.h"
 #include "dac.h"
+#include "system_init.h"
 
 int main(void) {
+  system_init();
   led_init();
   uart_init();
   dac_init();

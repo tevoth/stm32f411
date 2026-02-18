@@ -5,6 +5,7 @@
 #include "uart.h"
 #include "adxl345.h"
 #include "systick_msec_delay.h"
+#include "system_init.h"
 
 int16_t accel_x, accel_y, accel_z;
 
@@ -12,6 +13,7 @@ uint8_t data_buffer[6];
 
 int main(void) {
 
+  system_init();
   led_init();
   uart_init();
   adxl_init();

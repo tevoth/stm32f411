@@ -1,6 +1,5 @@
 #include "stm32f4xx.h"
 
-
 void system_init(void)
 {
     RCC->CR |= RCC_CR_HSION;

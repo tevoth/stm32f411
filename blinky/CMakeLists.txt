@@ -46,6 +46,8 @@ add_executable(${TARGET_NAME}.elf ${APP_SOURCES})
 
 target_include_directories(${TARGET_NAME}.elf PRIVATE
   ${CMAKE_SOURCE_DIR}/inc
+  ${CMAKE_SOURCE_DIR}/../cmsis_blinky/CMSIS/Include
+  ${CMAKE_SOURCE_DIR}/../cmsis_blinky/CMSIS/Device/ST/STM32F4xx/Include
 )
 
 # --- Compile options ---
@@ -59,6 +61,12 @@ target_compile_options(${TARGET_NAME}.elf PRIVATE
   -Wno-unused-parameter
   $<$<CONFIG:Debug>:-Og -g3>
   $<$<CONFIG:Release>:-O3 -g0>
+)
+
+# turn on/off STM32F411xE compile (required by stm32f4xx.h)
+set(STM32F411xE ON CACHE BOOL "turn on F411xE")
+target_compile_definitions(${TARGET_NAME}.elf PRIVATE
+  $<$<BOOL:${STM32F411xE}>:STM32F411xE=1>
 )
 
 # --- Link options (use your linker script; no external libs assumed) ---
@@ -92,4 +100,3 @@ add_custom_target(disasm
   DEPENDS ${TARGET_NAME}.elf
   COMMENT "Generating disassembly listing"
 )
-

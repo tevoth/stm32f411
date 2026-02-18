@@ -5,7 +5,7 @@
 #include "tim2_1hz_init.h"
 
 int main(void) {
-//  system_init();
+  system_init();
   tim2_1hz_init();
   led_init();
   while(1) {

@@ -1,11 +1,13 @@
 #include <stdint.h>
 #include "stm32f4xx.h"
+#include "system_init.h"
 
 #define GPIOCEN       (1U<<2)
 #define PIN13         (1U<<13)
 #define LED_PIN       PIN13
 
 int main(void) {
+  system_init();
   //  Enable clock access to GPIOA
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
 
@@ -15,7 +17,7 @@ int main(void) {
   while(1) {
     // toggle LED 
     GPIOC->ODR ^= LED_PIN;
-    for(int i = 0; i < 5000000; i++){}
+    for(volatile int i = 0; i < 5000000; i++){}
   }
   return 1;
 }
