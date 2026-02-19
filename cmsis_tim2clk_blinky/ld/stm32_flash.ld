@@ -47,6 +47,7 @@ SECTIONS
     . = ALIGN(4);
     _edata = .;
   } > SRAM
+  _sidata = LOADADDR(.data);
 
   /* Zero-initialized data in SRAM */
   .bss (NOLOAD) :
@@ -59,4 +60,3 @@ SECTIONS
     _ebss = .;
   } > SRAM
 }
-
