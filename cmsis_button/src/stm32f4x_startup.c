@@ -7,9 +7,8 @@ main.o :  arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb -std=gnu11 main.c -o main
 stm32f411_startup.o : arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb -std=gnu11 stm32f411_startup.c -o stm32f411_startup.o
 stm32_blink.elf : arm-none-eabi-gcc -nostdlib -T stm32_ls.ld *.o -o stm32_blink.elf -Wl,-Map=stm32_blink.map
 
-Load:
-
-openocd -f board/st_nucleo_f4.cfg
+OpenOCD (STM32F4 target + ST-Link interface):
+openocd -f target/stm32f4x.cfg -f interface/stlink.cfg
 **/
 
 /*Symbols defined in the linker script */
