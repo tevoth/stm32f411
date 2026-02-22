@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
 # Bare-metal STM32, startup is in C (no CMSIS/HAL/other libs assumed).
-project(stm32_baremetal C)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
@@ -14,6 +12,8 @@ set(CMAKE_C_COMPILER   ${TOOLCHAIN_PREFIX}gcc)
 set(CMAKE_OBJCOPY      ${TOOLCHAIN_PREFIX}objcopy)
 set(CMAKE_OBJDUMP      ${TOOLCHAIN_PREFIX}objdump)
 set(CMAKE_SIZE         ${TOOLCHAIN_PREFIX}size)
+
+project(stm32_baremetal C)
 
 # --- Target config (EDIT THESE) ---
 set(TARGET_NAME    firmware)
