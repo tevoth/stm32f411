@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "stm32f4xx.h"
 
-void dac_init(void) {
+void adc_init(void) {
 
   // enable clock access to GPIOA
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
@@ -29,14 +29,14 @@ void dac_init(void) {
 
 }
 
-void dac_start(void) {
+void adc_start(void) {
   // enable continuous conversion
   ADC1->CR2 |= ADC_CR2_CONT;
   // start aquisition
   ADC1->CR2 |= ADC_CR2_SWSTART;
 }
 
-uint32_t dac_read(void) {
+uint32_t adc_read(void) {
   while(!(ADC1->SR & ADC_SR_EOC)){}
   uint32_t value = ADC1->DR;
   return value;
