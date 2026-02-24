@@ -12,6 +12,8 @@ void adc_init(void) {
   
   // enable clock access to ADC unit
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+  RCC->APB2RSTR |= RCC_APB2RSTR_ADCRST;
+  RCC->APB2RSTR &= ~RCC_APB2RSTR_ADCRST;
 
   // Select ADC channel PA1
   ADC1->SQR3 &= ~(ADC_SQR3_SQ1_Msk); 
@@ -24,16 +26,14 @@ void adc_init(void) {
   ADC1->SMPR2 &= ~(7 << (1 * 3));
   ADC1->SMPR2 |= (4 << (1 * 3));
 
-  // Enable ADC 
-  ADC1->CR2 |= ADC_CR2_ADON; 
+  // Enable ADC from a known CR2 baseline.
+  ADC1->CR2 = ADC_CR2_ADON;
 
 }
 
 void adc_start(void) {
-  // enable continuous conversion
-  ADC1->CR2 |= ADC_CR2_CONT;
-  // start aquisition
-  ADC1->CR2 |= ADC_CR2_SWSTART;
+  // Continuous conversion + software start from deterministic config.
+  ADC1->CR2 = ADC_CR2_ADON | ADC_CR2_CONT | ADC_CR2_SWSTART;
 }
 
 uint32_t adc_read(void) {
