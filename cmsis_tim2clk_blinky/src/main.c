@@ -10,7 +10,7 @@ int main(void) {
   led_init();
   while(1) {
     while(!(TIM2->SR & TIM_SR_UIF)){}
-    TIM2->SR &= ~TIM_SR_UIF; // reset UIF flag
+    TIM2->SR = ~TIM_SR_UIF; // reset UIF flag without RMW on SR
     led_toggle();
   }
   return 0;
