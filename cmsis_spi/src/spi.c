@@ -52,6 +52,10 @@ void spi1_config(void) {
 }
 
 void spi1_transmit(uint8_t *data, uint32_t size) {
+  if ((data == 0U) && (size > 0U)) {
+    return;
+  }
+
   uint32_t i = 0;
   while (i < size) {
     // wait for TXE set
@@ -73,6 +77,10 @@ void spi1_transmit(uint8_t *data, uint32_t size) {
 }
 
 void spi1_receive(uint8_t *data, uint32_t size) {
+  if ((data == 0U) && (size > 0U)) {
+    return;
+  }
+
   while (size) {
     // set dummy data set generate SPI clock
     while (!(SPI1->SR & (SPI_SR_TXE))) {}

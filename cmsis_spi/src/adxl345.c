@@ -3,6 +3,10 @@
 
 void adxl_read(uint8_t address, uint8_t * rxdata)
 {
+  if (rxdata == 0U) {
+    return;
+  }
+
   /*Set read operation*/
   address |= ADXL345_READ_OPERATION;
 

@@ -15,6 +15,11 @@ int __io_putchar(int ch) {
 }
 
 int _write(int file, char *ptr, int len) {
+    (void)file;
+    if ((ptr == 0) && (len > 0)) {
+        return 0;
+    }
+
     for (int i = 0; i < len; i++) {
         __io_putchar(*ptr++);
     }
