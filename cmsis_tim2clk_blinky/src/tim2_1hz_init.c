@@ -12,10 +12,10 @@ void tim2_1hz_init(void) {
   RCC->APB1RSTR &= ~RCC_APB1RSTR_TIM2RST;
 
   TIM2->PSC = PRESCL - 1;
-  TIM2->CNT = 0;
-  TIM2->EGR = TIM_EGR_UG; // update pre-scaler NOW
-  TIM2->SR = ~TIM_SR_UIF; // clear UIF raised by UG without RMW on SR
   TIM2->ARR = PERIOD - 1;
+  TIM2->CNT = 0;
+  TIM2->EGR = TIM_EGR_UG; // apply PSC immediately via update event
+  TIM2->SR = ~TIM_SR_UIF; // clear UIF raised by UG without RMW on SR
   TIM2->CR1 = TIM_CR1_CEN; // start timer
   // timer debugging DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM2_STOP;
 }
