@@ -23,6 +23,7 @@ void led_init() {
   GPIOC->MODER  |=  (GPIO_MODER_MODER13_0);
   GPIOC->MODER  &= ~(GPIO_MODER_MODER13_1);
   GPIOC->OTYPER &= ~(GPIO_OTYPER_OT13);
+  GPIOC->BSRR = GPIO_BSRR_BR13;
 }
 
 void led_on() {
