@@ -14,11 +14,8 @@ void button_init() {
 } 
 
 bool get_button_state() {
-  if(GPIOA->IDR & BTN_PIN) {
-    return true;
-  } else {
-    return false;
-  }
+  // Pull-up on PA0 means pressed = low level.
+  return (GPIOA->IDR & BTN_PIN) == 0U;
 }
 
 void led_init() {
