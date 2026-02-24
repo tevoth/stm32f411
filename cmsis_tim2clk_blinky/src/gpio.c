@@ -7,17 +7,17 @@ static bool led_is_on = false;
 
 void button_init() {
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-  // set button pull-up
-  GPIOA->PUPDR |=  (GPIO_PUPDR_PUPDR0_0);
-  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR0_1);
+  // set button pull-down
+  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR0_0);
+  GPIOA->PUPDR |=  (GPIO_PUPDR_PUPDR0_1);
   GPIOA->MODER &= ~(GPIO_MODER_MODER0_0);
   GPIOA->MODER &= ~(GPIO_MODER_MODER0_1);
   GPIOA->OTYPER &= ~(GPIO_OTYPER_OT0);
 } 
 
 bool get_button_state() {
-  // Pull-up on PA0 means pressed = low level.
-  return (GPIOA->IDR & BTN_PIN) == 0U;
+  // Pull-down on PA0 means pressed = high level.
+  return (GPIOA->IDR & BTN_PIN) != 0U;
 }
 
 void led_init() {
