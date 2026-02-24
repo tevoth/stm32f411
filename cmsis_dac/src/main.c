@@ -4,6 +4,7 @@
 #include "led.h"
 #include "uart.h"
 #include "adc.h"
+#include "systick_msec_delay.h"
 #include "system_init.h"
 
 int main(void) {
@@ -18,7 +19,7 @@ int main(void) {
     volatile unsigned int value = adc_read(); 
     printf("HELLO FROM STM32...%u\n",value); 
     count = count + 1;
-    for (volatile int i = 0; i < 1000000; i++) {}
+    systick_msec_delay(100);
   }
   return 0;
 }
