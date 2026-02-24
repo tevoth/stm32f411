@@ -15,8 +15,11 @@ int main(void) {
   GPIOC->MODER  |=  (GPIO_MODER_MODER13_0); //(1U<<26);  //  19: Set bit 10 to 1
 
   while(1) {
-    // toggle LED 
-    GPIOC->ODR ^= LED_PIN;
+    if (GPIOC->ODR & LED_PIN) {
+      GPIOC->BSRR = GPIO_BSRR_BR13;
+    } else {
+      GPIOC->BSRR = GPIO_BSRR_BS13;
+    }
     for(volatile int i = 0; i < 5000000; i++){}
   }
   return 1;
