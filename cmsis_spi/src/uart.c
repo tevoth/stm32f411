@@ -33,11 +33,12 @@ void uart_init(void) {
 
   // enable clock to access uart2
   RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+  RCC->APB1RSTR |= RCC_APB1RSTR_USART2RST;
+  RCC->APB1RSTR &= ~RCC_APB1RSTR_USART2RST;
 
   uart_set_baudrate(APB1_CLK, UART_BAUDRATE);
 
-  USART2->CR1 |= USART_CR1_TE;
-  USART2->CR1 |= USART_CR1_UE;
+  USART2->CR1 = USART_CR1_TE | USART_CR1_UE;
 }
 
 static void uart_write(int ch) {
