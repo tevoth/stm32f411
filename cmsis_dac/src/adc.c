@@ -9,6 +9,7 @@ void adc_init(void) {
   // set pin PA1 to analog function
   GPIOA->MODER |= GPIO_MODER_MODER1_0;
   GPIOA->MODER |= GPIO_MODER_MODER1_1;
+  GPIOA->PUPDR &= ~GPIO_PUPDR_PUPD1_Msk;
   
   // enable clock access to ADC unit
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;

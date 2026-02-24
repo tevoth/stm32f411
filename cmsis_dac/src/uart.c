@@ -25,6 +25,7 @@ void uart_init(void) {
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 
   GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR9_0 | GPIO_PUPDR_PUPDR9_1);
+  GPIOA->OTYPER &= ~GPIO_OTYPER_OT9;
   // set to alternative function
   GPIOA->MODER &= ~GPIO_MODER_MODER9_0;
   GPIOA->MODER |=  GPIO_MODER_MODER9_1;
