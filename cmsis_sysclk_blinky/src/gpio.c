@@ -3,6 +3,8 @@
 #define BTN_PIN       (1U<<0)
 #define LED_PIN       (1U<<13)
 
+static bool led_is_on = false;
+
 void button_init() {
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   // set button pull-up
@@ -25,22 +27,24 @@ void led_init() {
   GPIOC->MODER  |=  (GPIO_MODER_MODER13_0);
   GPIOC->MODER  &= ~(GPIO_MODER_MODER13_1);
   GPIOC->OTYPER &= ~(GPIO_OTYPER_OT13);
+  GPIOC->BSRR = GPIO_BSRR_BR13;
+  led_is_on = false;
 }
+
 
 void led_on() {
   // set
   GPIOC->BSRR = GPIO_BSRR_BS13;
+  led_is_on = true;
 }
 
 void led_off() {
   // reset
   GPIOC->BSRR = GPIO_BSRR_BR13;
+  led_is_on = false;
 }
 
 void led_toggle() {
-  if (GPIOC->ODR & LED_PIN) {
-    GPIOC->BSRR = GPIO_BSRR_BR13;
-  } else {
-    GPIOC->BSRR = GPIO_BSRR_BS13;
-  }
+  led_is_on = !led_is_on;
+  GPIOC->BSRR = led_is_on ? GPIO_BSRR_BS13 : GPIO_BSRR_BR13;
 }
