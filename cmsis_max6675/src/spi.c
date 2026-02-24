@@ -9,10 +9,14 @@ void spi_gpio_init(void) {
     GPIOA->MODER &= ~(1U << (pin * 2));
     GPIOA->MODER |=  (2U << (pin * 2));
   }
+  GPIOA->OTYPER &= ~(GPIO_OTYPER_OT5 | GPIO_OTYPER_OT7);
+  GPIOA->PUPDR  &= ~(GPIO_PUPDR_PUPD5_Msk | GPIO_PUPDR_PUPD6_Msk | GPIO_PUPDR_PUPD7_Msk);
 
   // Set PA4 as output pin (chip-select)
   GPIOA->MODER |=  (1U << (4 * 2));
   GPIOA->MODER &= ~(2U << (4 * 2));
+  GPIOA->OTYPER &= ~(GPIO_OTYPER_OT4);
+  GPIOA->PUPDR  &= ~(GPIO_PUPDR_PUPD4_Msk);
 
   // default CS high (inactive)
   GPIOA->BSRR = GPIO_BSRR_BS4;
