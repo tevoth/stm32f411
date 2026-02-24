@@ -32,12 +32,12 @@ void led_init() {
 
 void led_on() {
   // set
-  GPIOC->BSRR |= GPIO_BSRR_BS13;
+  GPIOC->BSRR = GPIO_BSRR_BS13;
 }
 
 void led_off() {
   // reset
-  GPIOC->BSRR |= GPIO_BSRR_BR13;
+  GPIOC->BSRR = GPIO_BSRR_BR13;
 }
 
 void led_toggle() {
