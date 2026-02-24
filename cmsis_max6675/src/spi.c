@@ -15,7 +15,7 @@ void spi_gpio_init(void) {
   GPIOA->MODER &= ~(2U << (4 * 2));
 
   // default CS high (inactive)
-  GPIOA->ODR |= (1U << 4);
+  GPIOA->BSRR = GPIO_BSRR_BS4;
 
   // Set PA5, PA6, PA7 to AF type SPI
   for (uint16_t pin = 5; pin < 8; pin++) {
@@ -78,9 +78,9 @@ uint16_t spi1_transfer16(uint16_t tx_data) {
 }
 
 void cs_enable(void) {
-  GPIOA->ODR &= ~(1U << 4);
+  GPIOA->BSRR = GPIO_BSRR_BR4;
 }
 
 void cs_disable(void) {
-  GPIOA->ODR |=  (1U << 4);
+  GPIOA->BSRR = GPIO_BSRR_BS4;
 }
