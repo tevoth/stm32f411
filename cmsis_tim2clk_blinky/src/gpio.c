@@ -38,6 +38,9 @@ void led_off() {
 }
 
 void led_toggle() {
-  // toggle
-  GPIOC->ODR ^= LED_PIN; 
+  if (GPIOC->ODR & LED_PIN) {
+    GPIOC->BSRR = GPIO_BSRR_BR13;
+  } else {
+    GPIOC->BSRR = GPIO_BSRR_BS13;
+  }
 }
