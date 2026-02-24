@@ -29,28 +29,19 @@ void spi_gpio_init(void) {
 void spi1_config(void) {
   // Enable clock access to SPI1
   RCC->APB2ENR |= (RCC_APB2ENR_SPI1EN);
-  
-  // Set clock to fPClk/4
-  SPI1->CR1 |=  (1U << 3);
-  SPI1->CR1 &= ~(1U << 4);
-  SPI1->CR1 &= ~(1U << 5);
 
-  // Set CPOL and CPHA to 1
-  SPI1->CR1 |= (SPI_CR1_CPHA);
-  SPI1->CR1 |= (SPI_CR1_CPOL);
+  // Reset SPI1 to remove stale peripheral state on warm/debug reset paths.
+  RCC->APB2RSTR |= RCC_APB2RSTR_SPI1RST;
+  RCC->APB2RSTR &= ~RCC_APB2RSTR_SPI1RST;
 
-  // Set MSB first
-  SPI1->CR1 &= ~(SPI_CR1_LSBFIRST);
-  
-  // Set as master
-  SPI1->CR1 |= (SPI_CR1_MSTR);
-
-  // Set 8-bit data mode
-  SPI1->CR1 &= ~(SPI_CR1_DFF);
-
-  // Select software slave management 
-  SPI1->CR1 |= (SPI_CR1_SSI);
-  SPI1->CR1 |= (SPI_CR1_SSM);
+  // Compose CR1 from a known baseline.
+  uint32_t cr1 = 0U;
+  cr1 |= SPI_CR1_MSTR; // master mode
+  cr1 |= SPI_CR1_BR_0; // fPCLK/4
+  cr1 |= SPI_CR1_CPHA | SPI_CR1_CPOL; // SPI mode 3
+  cr1 |= SPI_CR1_SSI | SPI_CR1_SSM; // software slave management
+  // DFF remains 0 for 8-bit mode.
+  SPI1->CR1 = cr1;
 
   // Enable SPI module
   SPI1->CR1 |= (SPI_CR1_SPE);
