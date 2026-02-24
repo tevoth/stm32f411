@@ -9,6 +9,8 @@ int main(void) {
   tim2_1hz_init();
   led_init();
   while(1) {
+    // TODO: UIF polling can miss an update if another overflow occurs
+    // between observing UIF and clearing it; migrate to CNT rollover or IRQ.
     while(!(TIM2->SR & TIM_SR_UIF)){}
     TIM2->SR = ~TIM_SR_UIF; // reset UIF flag without RMW on SR
     led_toggle();
