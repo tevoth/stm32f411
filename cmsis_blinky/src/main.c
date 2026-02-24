@@ -17,6 +17,7 @@ int main(void) {
 
   GPIOC->MODER  &= ~(GPIO_MODER_MODER13_Msk);
   GPIOC->MODER  |=  (GPIO_MODER_MODER13_0);
+  GPIOC->OTYPER &= ~(GPIO_OTYPER_OT13);
   GPIOC->BSRR = GPIO_BSRR_BR13;
   led_is_on = false;
 
