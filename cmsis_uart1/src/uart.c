@@ -32,7 +32,7 @@ void uart_init(void) {
   GPIOA->AFR[1] &= ~(0xF << GPIO_AFRH_AFSEL9_Pos); // Clear all 4 bits for PA9
   GPIOA->AFR[1] |=  (0x7 << GPIO_AFRH_AFSEL9_Pos); // Set PA9 to AF7
 
-  // enable clock to access uart2
+  // enable clock to access uart1
   RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 
   uart_set_baudrate(APB2_CLK, UART_BAUDRATE);

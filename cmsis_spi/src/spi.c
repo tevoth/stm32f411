@@ -4,13 +4,13 @@ void spi_gpio_init(void) {
   // enable clock access to GPIOA
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 
-  // Set PA5 AF
+  // Set PA5, PA6, PA7 to alternate-function mode
   for (uint16_t pin = 5; pin < 8; pin++) {
     GPIOA->MODER &= ~(1U << (pin * 2));
     GPIOA->MODER |=  (2U << (pin * 2));
   }
 
-  // Set PA9 as output pin
+  // Set PA4 as output pin (chip-select)
   GPIOA->MODER |=  (1U << (4 * 2));
   GPIOA->MODER &= ~(2U << (4 * 2));
 

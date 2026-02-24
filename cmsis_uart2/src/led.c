@@ -1,7 +1,7 @@
 #include "led.h"
 
 void led_init(void) {
-  //  Enable clock access to GPIOA
+  // Enable clock access to GPIOC
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
 
   GPIOC->MODER  &= ~(GPIO_MODER_MODER13_Msk);
