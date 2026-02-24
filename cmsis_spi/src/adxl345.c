@@ -44,8 +44,6 @@ uint8_t adxl_device_present(void)
 void adxl_write (uint8_t address, uint8_t value)
 {
   uint8_t data[2];
-  // Enable multi-byte, place address into buffer
-  // data[0] = address|ADXL345_MULTI_BYTE_ENABLE;
   // single-byte write
   data[0] = address;
 

@@ -8,11 +8,11 @@
 
 int main(void) {
   system_init();
-  //  Enable clock access to GPIOA
+  // Enable clock access to GPIOC
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
 
   GPIOC->MODER  &= ~(GPIO_MODER_MODER13_Msk);
-  GPIOC->MODER  |=  (GPIO_MODER_MODER13_0); //(1U<<26);  //  19: Set bit 10 to 1
+  GPIOC->MODER  |=  (GPIO_MODER_MODER13_0);
 
   while(1) {
     if (GPIOC->ODR & LED_PIN) {
