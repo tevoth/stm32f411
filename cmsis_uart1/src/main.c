@@ -4,6 +4,7 @@
 #include "led.h"
 #include "uart.h"
 #include "system_init.h"
+#include "systick_msec_delay.h"
 
 int main(void) {
   system_init();
@@ -12,7 +13,7 @@ int main(void) {
   while(1) {
     led_toggle();
     printf("HELLO FROM STM32...\n"); 
-    for(volatile int i = 0; i < 500000; i++) {}
+    systick_msec_delay(100);
   }
   return 0;
 }

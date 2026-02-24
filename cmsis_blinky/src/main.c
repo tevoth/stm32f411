@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "stm32f4xx.h"
 #include "system_init.h"
+#include "systick_msec_delay.h"
 
 #define GPIOCEN       (1U<<2)
 #define PIN13         (1U<<13)
@@ -22,7 +23,7 @@ int main(void) {
   while(1) {
     led_is_on = !led_is_on;
     GPIOC->BSRR = led_is_on ? GPIO_BSRR_BS13 : GPIO_BSRR_BR13;
-    for(volatile int i = 0; i < 5000000; i++){}
+    systick_msec_delay(500);
   }
   return 1;
 }
