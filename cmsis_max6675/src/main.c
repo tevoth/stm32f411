@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include "stm32f4xx.h"
 #include "led.h"
 #include "uart.h"
@@ -29,7 +30,7 @@ int main(void) {
       printf("MAX6675 fault: thermocouple open (raw=0x%04X)\n", raw);
     } else {
       int32_t temp_c_x100 = max6675_temp_c_x100(raw);
-      printf("MAX6675 temp: %ld.%02ld C (raw=0x%04X)\n",
+      printf("MAX6675 temp: %" PRId32 ".%02" PRId32 " C (raw=0x%04X)\n",
         temp_c_x100 / 100,
         temp_c_x100 % 100,
         raw);
