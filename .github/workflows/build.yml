@@ -34,3 +34,14 @@ jobs:
             cmake -S "$project" -B "$project/build"
             cmake --build "$project/build"
           done
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            cmsis_*/build/firmware.elf
+            cmsis_*/build/firmware.hex
+            cmsis_*/build/firmware.bin
