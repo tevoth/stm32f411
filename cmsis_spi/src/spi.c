@@ -1,4 +1,21 @@
 #include "spi.h"
+#include <stdbool.h>
+
+#define SPI_WAIT_LIMIT 100000U
+
+// Wait until status bits are set; false indicates timeout.
+static bool spi_wait_set(volatile uint32_t *reg, uint32_t mask) {
+  uint32_t timeout = SPI_WAIT_LIMIT;
+  while (((*reg & mask) == 0U) && (timeout-- > 0U)) {}
+  return ((*reg & mask) != 0U);
+}
+
+// Wait until status bits are clear; false indicates timeout.
+static bool spi_wait_clear(volatile uint32_t *reg, uint32_t mask) {
+  uint32_t timeout = SPI_WAIT_LIMIT;
+  while (((*reg & mask) != 0U) && (timeout-- > 0U)) {}
+  return ((*reg & mask) == 0U);
+}
 
 void spi_gpio_init(void) {
   // enable clock access to GPIOA
@@ -58,18 +75,24 @@ void spi1_transmit(uint8_t *data, uint32_t size) {
 
   uint32_t i = 0;
   while (i < size) {
-    // wait for TXE set
-    while (!(SPI1->SR & (SPI_SR_TXE))) {}
+    // Wait for TX buffer space with timeout guard.
+    if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+      return;
+    }
     
     // data ready, right to data register
     *(__IO uint8_t *)&SPI1->DR = data[i];
     i++;
   }
-  // wait until TXE is set
-  while (!(SPI1->SR & (SPI_SR_TXE))) {}
+  // Wait until TXE is set for the last frame.
+  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    return;
+  }
 
-  // wait for BUSY flag to reset
-  while ((SPI1->SR & (SPI_SR_BSY))) {}
+  // Wait until SPI is no longer busy on the wire.
+  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    return;
+  }
 
   // clear flags
   (void)SPI1->DR;
@@ -83,18 +106,26 @@ void spi1_receive(uint8_t *data, uint32_t size) {
 
   while (size) {
     // set dummy data set generate SPI clock
-    while (!(SPI1->SR & (SPI_SR_TXE))) {}
+    if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+      return;
+    }
     *(__IO uint8_t *)&SPI1->DR = 0U;
     // wait for RXNE flag to be set
-    while (!(SPI1->SR & (SPI_SR_RXNE))) {}
+    if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
+      return;
+    }
     // read data
     *data++ = *(__IO uint8_t *)&SPI1->DR;
     size--;
   }
 
   // wait until the last frame has fully shifted out before deasserting CS
-  while (!(SPI1->SR & (SPI_SR_TXE))) {}
-  while ((SPI1->SR & (SPI_SR_BSY))) {}
+  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    return;
+  }
+  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    return;
+  }
 
   // clear flags
   (void)SPI1->DR;
