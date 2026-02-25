@@ -9,6 +9,7 @@ void system_init(void)
     uint32_t timeout = RCC_WAIT_LIMIT;
     while (!(RCC->CR & RCC_CR_HSIRDY) && (timeout-- > 0U)) {}
     if ((RCC->CR & RCC_CR_HSIRDY) == 0U) {
+        // TODO: propagate system_init failure to caller (e.g., bool return) and handle it in main.
         return;
     }
 
