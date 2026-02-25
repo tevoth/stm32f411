@@ -27,5 +27,5 @@ int main(void) {
     GPIOC->BSRR = led_is_on ? GPIO_BSRR_BS13 : GPIO_BSRR_BR13;
     systick_msec_delay(500);
   }
-  return 1;
+  return 0;
 }
