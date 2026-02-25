@@ -27,13 +27,13 @@ int main(void) {
     }
 
     if (max6675_thermocouple_open(raw)) {
-      printf("MAX6675 fault: thermocouple open (raw=0x%04X)\n", raw);
+      printf("MAX6675 fault: thermocouple open (raw=0x%04X)\n", (unsigned)raw);
     } else {
       int32_t temp_c_x100 = max6675_temp_c_x100(raw);
       printf("MAX6675 temp: %" PRId32 ".%02" PRId32 " C (raw=0x%04X)\n",
         temp_c_x100 / 100,
         temp_c_x100 % 100,
-        raw);
+        (unsigned)raw);
     }
 
     // MAX6675 updates roughly every 220 ms.

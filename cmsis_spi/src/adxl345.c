@@ -83,6 +83,6 @@ void adxl_init (void)
 
   // Check device
   uint8_t devid = adxl_read_reg(ADXL345_REG_DEVID);
-  printf("ADXL345 DEVID read: 0x%02X (%s)\n", devid, 
+  printf("ADXL345 DEVID read: 0x%02X (%s)\n", (unsigned)devid, 
     (devid == ADXL345_DEVICE_ID) ? "OK" : "BAD");
 }
