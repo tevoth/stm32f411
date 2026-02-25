@@ -68,16 +68,16 @@ void spi1_config(void) {
   SPI1->CR1 |= (SPI_CR1_SPE);
 }
 
-void spi1_transmit(uint8_t *data, uint32_t size) {
+bool spi1_transmit(uint8_t *data, uint32_t size) {
   if ((data == 0U) && (size > 0U)) {
-    return;
+    return false;
   }
 
   uint32_t i = 0;
   while (i < size) {
     // Wait for TX buffer space with timeout guard.
     if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
-      return;
+      return false;
     }
     
     // data ready, right to data register
@@ -86,33 +86,34 @@ void spi1_transmit(uint8_t *data, uint32_t size) {
   }
   // Wait until TXE is set for the last frame.
   if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
-    return;
+    return false;
   }
 
   // Wait until SPI is no longer busy on the wire.
   if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
-    return;
+    return false;
   }
 
   // clear flags
   (void)SPI1->DR;
   (void)SPI1->SR;
+  return true;
 }
 
-void spi1_receive(uint8_t *data, uint32_t size) {
+bool spi1_receive(uint8_t *data, uint32_t size) {
   if ((data == 0U) && (size > 0U)) {
-    return;
+    return false;
   }
 
   while (size) {
     // set dummy data set generate SPI clock
     if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
-      return;
+      return false;
     }
     *(__IO uint8_t *)&SPI1->DR = 0U;
     // wait for RXNE flag to be set
     if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
-      return;
+      return false;
     }
     // read data
     *data++ = *(__IO uint8_t *)&SPI1->DR;
@@ -121,15 +122,16 @@ void spi1_receive(uint8_t *data, uint32_t size) {
 
   // wait until the last frame has fully shifted out before deasserting CS
   if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
-    return;
+    return false;
   }
   if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
-    return;
+    return false;
   }
 
   // clear flags
   (void)SPI1->DR;
   (void)SPI1->SR;
+  return true;
 }
 
 void cs_enable(void) {
