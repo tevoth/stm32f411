@@ -1,13 +1,23 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include "stm32f4xx.h"
 #include "uart.h"
 
 #define UART_BAUDRATE 115200
 #define SYS_FREQ      16000000
 #define APB2_CLK      SYS_FREQ
+#define UART_WAIT_LIMIT 100000U
 
 static void uart_set_baudrate(uint32_t periph_clk, uint32_t baudrate);
 static void uart_write(int ch);
+static bool uart_wait_set(volatile uint32_t *reg, uint32_t mask);
+
+// Wait until status bits are set; false indicates timeout.
+static bool uart_wait_set(volatile uint32_t *reg, uint32_t mask) {
+  uint32_t timeout = UART_WAIT_LIMIT;
+  while (((*reg & mask) == 0U) && (timeout-- > 0U)) {}
+  return ((*reg & mask) != 0U);
+}
 
 int __io_putchar(int ch) {
   uart_write(ch);
@@ -49,7 +59,9 @@ void uart_init(void) {
 }
 
 static void uart_write(int ch) {
-  while (!(USART1->SR & USART_SR_TXE)){}
+  if (!uart_wait_set(&USART1->SR, USART_SR_TXE)) {
+    return;
+  }
 
   USART1->DR = (ch & 0xFF);
 }
