@@ -54,7 +54,7 @@ uint8_t adxl_device_present(void)
 }
 
 
-void adxl_write (uint8_t address, uint8_t value)
+bool adxl_write(uint8_t address, uint8_t value)
 {
   uint8_t data[2];
   // single-byte write
@@ -67,13 +67,14 @@ void adxl_write (uint8_t address, uint8_t value)
   cs_enable();
 
   // Transmit data and address
-  spi1_transmit(data, 2);
+  bool ok = spi1_transmit(data, 2);
 
   // Pull cs line high to disable slave
   cs_disable();
+  return ok;
 }
 
-void adxl_init (void)
+bool adxl_init(void)
 {
   // Enable SPI gpio
   spi_gpio_init();
@@ -82,16 +83,26 @@ void adxl_init (void)
   spi1_config();
 
   // Set data format range to +-4g and full range mode
-  adxl_write(ADXL345_REG_DATA_FORMAT, ADXL345_FULL_RES | ADXL345_RANGE_4G);
+  if (!adxl_write(ADXL345_REG_DATA_FORMAT, ADXL345_FULL_RES | ADXL345_RANGE_4G)) {
+    printf("ADXL345 init failed: DATA_FORMAT write timeout\n");
+    return false;
+  }
 
   // Reset all bits
-  adxl_write (ADXL345_REG_POWER_CTL, ADXL345_RESET);
+  if (!adxl_write(ADXL345_REG_POWER_CTL, ADXL345_RESET)) {
+    printf("ADXL345 init failed: POWER_CTL reset write timeout\n");
+    return false;
+  }
 
   // Configure power control measure bit
-  adxl_write (ADXL345_REG_POWER_CTL, ADXL345_MEASURE_BIT);
+  if (!adxl_write(ADXL345_REG_POWER_CTL, ADXL345_MEASURE_BIT)) {
+    printf("ADXL345 init failed: POWER_CTL measure write timeout\n");
+    return false;
+  }
 
   // Check device
   uint8_t devid = adxl_read_reg(ADXL345_REG_DEVID);
   printf("ADXL345 DEVID read: 0x%02X (%s)\n", (unsigned)devid, 
     (devid == ADXL345_DEVICE_ID) ? "OK" : "BAD");
+  return (devid == ADXL345_DEVICE_ID);
 }

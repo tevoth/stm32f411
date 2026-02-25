@@ -17,7 +17,12 @@ int main(void) {
   system_init();
   led_init();
   uart_init();
-  adxl_init();
+  if (!adxl_init()) {
+    while (1) {
+      printf("ADXL345 init failed\n");
+      systick_msec_delay(500);
+    }
+  }
 
   while(1) {
     led_toggle();

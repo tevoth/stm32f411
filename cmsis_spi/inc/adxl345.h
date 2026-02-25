@@ -15,7 +15,8 @@
 #define ADXL345_DEVICE_ID (0xE5)
 #define ADXL345_FULL_RES (1U << 3)
 
-void adxl_init (void);
+bool adxl_init(void);
 bool adxl_read(uint8_t address, uint8_t * rxdata);
 uint8_t adxl_read_reg(uint8_t address);
 uint8_t adxl_device_present(void);
+bool adxl_write(uint8_t address, uint8_t value);
