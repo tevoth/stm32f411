@@ -16,8 +16,3 @@ gdb-multiarch firmware.elf
 
 somethings:
 > monitor halt
-
-printf format safety:
-- For fixed-width signed integers (for example `int32_t`), include `<inttypes.h>` and use `PRId32`/`PRIi32`.
-- For `%X`/`%x`, pass an `unsigned int` argument. Cast small-width values in variadic calls, e.g. `(unsigned)raw`.
-- Avoid relying on implicit promotions in `printf`; mismatched format/argument types are undefined behavior in C.
