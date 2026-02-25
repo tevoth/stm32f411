@@ -1,4 +1,21 @@
 #include "spi.h"
+#include <stdbool.h>
+
+#define SPI_WAIT_LIMIT 100000U
+
+// Wait until status bits are set; false indicates timeout.
+static bool spi_wait_set(volatile uint32_t *reg, uint32_t mask) {
+  uint32_t timeout = SPI_WAIT_LIMIT;
+  while (((*reg & mask) == 0U) && (timeout-- > 0U)) {}
+  return ((*reg & mask) != 0U);
+}
+
+// Wait until status bits are clear; false indicates timeout.
+static bool spi_wait_clear(volatile uint32_t *reg, uint32_t mask) {
+  uint32_t timeout = SPI_WAIT_LIMIT;
+  while (((*reg & mask) != 0U) && (timeout-- > 0U)) {}
+  return ((*reg & mask) == 0U);
+}
 
 void spi_gpio_init(void) {
   // enable clock access to GPIOA
@@ -53,18 +70,26 @@ void spi1_config(void) {
 
 uint16_t spi1_transfer16(uint16_t tx_data) {
   // Wait until transmit buffer is empty.
-  while (!(SPI1->SR & (SPI_SR_TXE))) {}
+  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    return 0xFFFFU;
+  }
 
   // 16-bit access is required when DFF=1.
   *(__IO uint16_t *)&SPI1->DR = tx_data;
 
   // Wait for the received 16-bit frame.
-  while (!(SPI1->SR & (SPI_SR_RXNE))) {}
+  if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
+    return 0xFFFFU;
+  }
   uint16_t rx_data = *(__IO uint16_t *)&SPI1->DR;
 
   // Wait until transfer is fully complete on the wire.
-  while (!(SPI1->SR & (SPI_SR_TXE))) {}
-  while (SPI1->SR & (SPI_SR_BSY)) {}
+  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    return 0xFFFFU;
+  }
+  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    return 0xFFFFU;
+  }
 
   // Final SR read keeps status handling consistent with other paths.
   (void)SPI1->SR;
