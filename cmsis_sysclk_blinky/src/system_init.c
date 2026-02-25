@@ -21,4 +21,8 @@ void system_init(void)
 
     timeout = RCC_WAIT_LIMIT;
     while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) && (timeout-- > 0U)) {}
+    if ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {
+        // TODO: propagate system_init failure to caller (e.g., bool return) and handle it in main.
+        return;
+    }
 }
