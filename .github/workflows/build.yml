@@ -26,6 +26,7 @@ jobs:
             cmsis_blinky \
             cmsis_button \
             cmsis_dac \
+            cmsis_max6675 \
             cmsis_spi \
             cmsis_sysclk_blinky \
             cmsis_tim2clk_blinky \
