@@ -9,7 +9,7 @@
 #define UART_WAIT_LIMIT 100000U
 
 static void uart_set_baudrate(uint32_t periph_clk, uint32_t baudrate);
-static void uart_write(int ch);
+static bool uart_write(int ch);
 static bool uart_wait_set(volatile uint32_t *reg, uint32_t mask);
 
 // Wait until status bits are set; false indicates timeout.
@@ -20,8 +20,7 @@ static bool uart_wait_set(volatile uint32_t *reg, uint32_t mask) {
 }
 
 int __io_putchar(int ch) {
-  uart_write(ch);
-  return ch;
+  return uart_write(ch) ? ch : -1;
 }
 
 int _write(int file, char *ptr, int len) {
@@ -31,10 +30,14 @@ int _write(int file, char *ptr, int len) {
         return 0;
     }
 
+    int written = 0;
     for (int i = 0; i < len; i++) {
-        __io_putchar(*ptr++);
+        if (__io_putchar(*ptr++) < 0) {
+            return (written > 0) ? written : -1;
+        }
+        written++;
     }
-    return len;
+    return written;
 }
 
 void uart_init(void) {
@@ -59,12 +62,13 @@ void uart_init(void) {
   USART2->CR1 = USART_CR1_TE | USART_CR1_UE;
 }
 
-static void uart_write(int ch) {
+static bool uart_write(int ch) {
   if (!uart_wait_set(&USART2->SR, USART_SR_TXE)) {
-    return;
+    return false;
   }
 
   USART2->DR = (ch & 0xFF);
+  return true;
 }
 
 static uint16_t compute_uart_bd(uint32_t periph_clk, uint32_t baudrate) {
