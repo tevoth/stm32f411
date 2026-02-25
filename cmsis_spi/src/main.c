@@ -21,7 +21,11 @@ int main(void) {
 
   while(1) {
     led_toggle();
-    adxl_read(ADXL345_REG_DATA_START, data_buffer);
+    if (!adxl_read(ADXL345_REG_DATA_START, data_buffer)) {
+      printf("ADXL345 read timeout\n");
+      systick_msec_delay(100);
+      continue;
+    }
 
     // combine high and low bytes to form the accel data
     accel_x = (int16_t)((data_buffer[1] << 8) | data_buffer[0]);

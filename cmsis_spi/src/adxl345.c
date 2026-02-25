@@ -1,10 +1,10 @@
 #include "adxl345.h"
 #include <stdio.h>
 
-void adxl_read(uint8_t address, uint8_t * rxdata)
+bool adxl_read(uint8_t address, uint8_t * rxdata)
 {
   if (rxdata == 0U) {
-    return;
+    return false;
   }
 
   /*Set read operation*/
@@ -17,23 +17,32 @@ void adxl_read(uint8_t address, uint8_t * rxdata)
   cs_enable();
 
   /*Send address*/
-  spi1_transmit(&address,1);
+  if (!spi1_transmit(&address, 1)) {
+    cs_disable();
+    return false;
+  }
 
   /*Read 6 bytes */
-  spi1_receive(rxdata,6);
+  if (!spi1_receive(rxdata, 6)) {
+    cs_disable();
+    return false;
+  }
 
   /*Pull cs line high to disable slave*/
   cs_disable();
+  return true;
 }
 
 uint8_t adxl_read_reg(uint8_t address)
 {
   uint8_t read_cmd = address | ADXL345_READ_OPERATION;
-  uint8_t value;
+  uint8_t value = 0U;
 
   cs_enable();
-  spi1_transmit(&read_cmd, 1);
-  spi1_receive(&value, 1);
+  if (!spi1_transmit(&read_cmd, 1) || !spi1_receive(&value, 1)) {
+    cs_disable();
+    return 0U;
+  }
   cs_disable();
 
   return value;
