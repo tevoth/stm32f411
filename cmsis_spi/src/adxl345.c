@@ -33,24 +33,31 @@ bool adxl_read(uint8_t address, uint8_t * rxdata)
   return true;
 }
 
-uint8_t adxl_read_reg(uint8_t address)
+bool adxl_read_reg(uint8_t address, uint8_t *value)
 {
+  if (value == 0U) {
+    return false;
+  }
+
   uint8_t read_cmd = address | ADXL345_READ_OPERATION;
-  uint8_t value = 0U;
 
   cs_enable();
-  if (!spi1_transmit(&read_cmd, 1) || !spi1_receive(&value, 1)) {
+  if (!spi1_transmit(&read_cmd, 1) || !spi1_receive(value, 1)) {
     cs_disable();
-    return 0U;
+    return false;
   }
   cs_disable();
 
-  return value;
+  return true;
 }
 
 uint8_t adxl_device_present(void)
 {
-  return (adxl_read_reg(ADXL345_REG_DEVID) == ADXL345_DEVICE_ID);
+  uint8_t devid = 0U;
+  if (!adxl_read_reg(ADXL345_REG_DEVID, &devid)) {
+    return 0U;
+  }
+  return (devid == ADXL345_DEVICE_ID);
 }
 
 
@@ -101,7 +108,11 @@ bool adxl_init(void)
   }
 
   // Check device
-  uint8_t devid = adxl_read_reg(ADXL345_REG_DEVID);
+  uint8_t devid = 0U;
+  if (!adxl_read_reg(ADXL345_REG_DEVID, &devid)) {
+    printf("ADXL345 init failed: DEVID read timeout\n");
+    return false;
+  }
   printf("ADXL345 DEVID read: 0x%02X (%s)\n", (unsigned)devid, 
     (devid == ADXL345_DEVICE_ID) ? "OK" : "BAD");
   return (devid == ADXL345_DEVICE_ID);
