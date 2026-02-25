@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include "stm32f4xx.h"
 #include "led.h"
 #include "uart.h"
@@ -32,7 +33,7 @@ int main(void) {
     int32_t accel_y_mg = (int32_t)accel_y * 39 / 10;
     int32_t accel_z_mg = (int32_t)accel_z * 39 / 10;
 
-    printf("accel_x : %6d (%ld mg) accel_y : %6d (%ld mg) accel_z : %6d (%ld mg)\n",
+    printf("accel_x : %6d (%" PRId32 " mg) accel_y : %6d (%" PRId32 " mg) accel_z : %6d (%" PRId32 " mg)\n",
       accel_x, accel_x_mg,
       accel_y, accel_y_mg,
       accel_z, accel_z_mg);
