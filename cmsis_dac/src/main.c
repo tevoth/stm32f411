@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include "stm32f4xx.h"
 #include "led.h"
 #include "uart.h"
@@ -15,8 +16,13 @@ int main(void) {
   adc_start();
   while(1) {
     led_toggle();
-    volatile unsigned int value = adc_read(); 
-    printf("HELLO FROM STM32...%u\n",value); 
+    uint32_t value = adc_read();
+    if (value == UINT32_MAX) {
+      printf("ADC read timeout\n");
+      systick_msec_delay(100);
+      continue;
+    }
+    printf("HELLO FROM STM32...%" PRIu32 "\n", value);
     systick_msec_delay(100);
   }
   return 0;
