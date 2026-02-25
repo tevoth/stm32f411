@@ -13,12 +13,10 @@ int main(void) {
   uart_init();
   adc_init();
   adc_start();
-  int count = 0;
   while(1) {
     led_toggle();
     volatile unsigned int value = adc_read(); 
     printf("HELLO FROM STM32...%u\n",value); 
-    count = count + 1;
     systick_msec_delay(100);
   }
   return 0;
