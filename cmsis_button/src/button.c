@@ -2,6 +2,9 @@
 
 #include "gpio.h"
 
+#define BUTTON_DEBOUNCE_STABLE_SAMPLES 10U
+#define BUTTON_DEBOUNCE_TIMEOUT_MS 50U
+
 static void delay_1ms(void) {
   SysTick->CTRL = 0U;
   SysTick->VAL = 0U;
@@ -14,9 +17,12 @@ static void delay_1ms(void) {
 bool button_get_state_debounced(void) {
   bool candidate = get_button_state();
   uint32_t stable_samples = 0U;
+  uint32_t elapsed_ms = 0U;
 
-  while (stable_samples < 10U) {
+  while ((stable_samples < BUTTON_DEBOUNCE_STABLE_SAMPLES) &&
+         (elapsed_ms < BUTTON_DEBOUNCE_TIMEOUT_MS)) {
     delay_1ms();
+    elapsed_ms++;
     bool now = get_button_state();
     if (now == candidate) {
       stable_samples++;
