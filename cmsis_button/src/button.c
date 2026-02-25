@@ -5,6 +5,9 @@
 #define BUTTON_DEBOUNCE_STABLE_SAMPLES 10U
 #define BUTTON_DEBOUNCE_TIMEOUT_MS 50U
 
+// Preserves the last confirmed debounced state across timeout exits.
+static bool last_stable_state = false;
+
 static void delay_1ms(void) {
   SysTick->CTRL = 0U;
   SysTick->VAL = 0U;
@@ -32,5 +35,9 @@ bool button_get_state_debounced(void) {
     }
   }
 
-  return candidate;
+  if (stable_samples >= BUTTON_DEBOUNCE_STABLE_SAMPLES) {
+    last_stable_state = candidate;
+  }
+
+  return last_stable_state;
 }
