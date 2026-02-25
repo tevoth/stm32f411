@@ -1,5 +1,15 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include "stm32f4xx.h"
+
+#define ADC_WAIT_LIMIT 100000U
+
+// Wait until status bits are set; false indicates timeout.
+static bool adc_wait_set(volatile uint32_t *reg, uint32_t mask) {
+  uint32_t timeout = ADC_WAIT_LIMIT;
+  while (((*reg & mask) == 0U) && (timeout-- > 0U)) {}
+  return ((*reg & mask) != 0U);
+}
 
 void adc_init(void) {
 
@@ -38,7 +48,10 @@ void adc_start(void) {
 }
 
 uint32_t adc_read(void) {
-  while(!(ADC1->SR & ADC_SR_EOC)){}
+  if (!adc_wait_set(&ADC1->SR, ADC_SR_EOC)) {
+    // Preserve forward progress instead of deadlocking on missing EOC.
+    return UINT32_MAX;
+  }
   uint32_t value = ADC1->DR;
   return value;
 }
