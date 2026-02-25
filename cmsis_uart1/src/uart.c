@@ -25,6 +25,10 @@ int __io_putchar(int ch) {
 
 int _write(int file, char *ptr, int len) {
     (void)file;
+    if (len < 0) {
+        // TODO: optionally set errno for invalid length input.
+        return -1;
+    }
     if ((ptr == 0) && (len > 0)) {
         // TODO: optionally set errno for invalid buffer input.
         return -1;
