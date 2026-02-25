@@ -14,5 +14,5 @@ int main(void) {
       led_off();
     }
   }
-  return 1;
+  return 0;
 }
