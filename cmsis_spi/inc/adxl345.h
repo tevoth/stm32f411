@@ -18,5 +18,5 @@
 bool adxl_init(void);
 bool adxl_read(uint8_t address, uint8_t * rxdata);
 bool adxl_read_reg(uint8_t address, uint8_t *value);
-uint8_t adxl_device_present(void);
+bool adxl_device_present(bool *present);
 bool adxl_write(uint8_t address, uint8_t value);

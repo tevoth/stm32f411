@@ -51,13 +51,18 @@ bool adxl_read_reg(uint8_t address, uint8_t *value)
   return true;
 }
 
-uint8_t adxl_device_present(void)
+bool adxl_device_present(bool *present)
 {
+  if (present == 0U) {
+    return false;
+  }
+
   uint8_t devid = 0U;
   if (!adxl_read_reg(ADXL345_REG_DEVID, &devid)) {
-    return 0U;
+    return false;
   }
-  return (devid == ADXL345_DEVICE_ID);
+  *present = (devid == ADXL345_DEVICE_ID);
+  return true;
 }
 
 
