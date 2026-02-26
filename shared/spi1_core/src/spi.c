@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 
+#include "../../spi_common/inc/spi_wait.h"
+
 #define SPI_WAIT_LIMIT 100000U
 
 #ifndef SPI1_CFG_CPOL
@@ -16,20 +18,6 @@
 #define SPI1_CFG_MISO_PULLUP 0
 #endif
 
-// Wait until status bits are set; false indicates timeout.
-static bool spi_wait_set(volatile uint32_t *reg, uint32_t mask) {
-  uint32_t timeout = SPI_WAIT_LIMIT;
-  while (((*reg & mask) == 0U) && (timeout-- > 0U)) {}
-  return ((*reg & mask) != 0U);
-}
-
-// Wait until status bits are clear; false indicates timeout.
-static bool spi_wait_clear(volatile uint32_t *reg, uint32_t mask) {
-  uint32_t timeout = SPI_WAIT_LIMIT;
-  while (((*reg & mask) != 0U) && (timeout-- > 0U)) {}
-  return ((*reg & mask) == 0U);
-}
-
 static void spi_clear_status(void) {
   (void)SPI1->DR;
   (void)SPI1->SR;
@@ -37,7 +25,7 @@ static void spi_clear_status(void) {
 
 // Best-effort timeout recovery so a failed transfer does not poison the next one.
 static void spi_recover(void) {
-  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+  if (!spi_wait_clear_limit(&SPI1->SR, SPI_SR_BSY, SPI_WAIT_LIMIT)) {
     // Fallback if SPI remains busy/stuck: pulse SPE while preserving CR1 config.
     SPI1->CR1 &= ~SPI_CR1_SPE;
     SPI1->CR1 |= SPI_CR1_SPE;
@@ -113,7 +101,7 @@ bool spi1_transmit(uint8_t *data, uint32_t size) {
   uint32_t i = 0;
   while (i < size) {
     // Wait for TX buffer space with timeout guard.
-    if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    if (!spi_wait_set_limit(&SPI1->SR, SPI_SR_TXE, SPI_WAIT_LIMIT)) {
       spi_recover();
       return false;
     }
@@ -123,13 +111,13 @@ bool spi1_transmit(uint8_t *data, uint32_t size) {
     i++;
   }
   // Wait until TXE is set for the last frame.
-  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+  if (!spi_wait_set_limit(&SPI1->SR, SPI_SR_TXE, SPI_WAIT_LIMIT)) {
     spi_recover();
     return false;
   }
 
   // Wait until SPI is no longer busy on the wire.
-  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+  if (!spi_wait_clear_limit(&SPI1->SR, SPI_SR_BSY, SPI_WAIT_LIMIT)) {
     spi_recover();
     return false;
   }
@@ -145,14 +133,14 @@ bool spi1_receive(uint8_t *data, uint32_t size) {
 
   while (size) {
     // set dummy data to generate SPI clock
-    if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    if (!spi_wait_set_limit(&SPI1->SR, SPI_SR_TXE, SPI_WAIT_LIMIT)) {
       spi_recover();
       return false;
     }
     *(__IO uint8_t *)&SPI1->DR = 0U;
 
     // wait for RXNE flag to be set
-    if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
+    if (!spi_wait_set_limit(&SPI1->SR, SPI_SR_RXNE, SPI_WAIT_LIMIT)) {
       spi_recover();
       return false;
     }
@@ -163,11 +151,11 @@ bool spi1_receive(uint8_t *data, uint32_t size) {
   }
 
   // wait until the last frame has fully shifted out before deasserting CS
-  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+  if (!spi_wait_set_limit(&SPI1->SR, SPI_SR_TXE, SPI_WAIT_LIMIT)) {
     spi_recover();
     return false;
   }
-  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+  if (!spi_wait_clear_limit(&SPI1->SR, SPI_SR_BSY, SPI_WAIT_LIMIT)) {
     spi_recover();
     return false;
   }

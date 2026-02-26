@@ -1,18 +1,8 @@
 #include "spi2_sd.h"
 
+#include "../../spi_common/inc/spi_wait.h"
+
 #define SPI2_WAIT_LIMIT 100000U
-
-static bool spi2_wait_set(volatile uint32_t *reg, uint32_t mask) {
-  uint32_t timeout = SPI2_WAIT_LIMIT;
-  while (((*reg & mask) == 0U) && (timeout-- > 0U)) {}
-  return ((*reg & mask) != 0U);
-}
-
-static bool spi2_wait_clear(volatile uint32_t *reg, uint32_t mask) {
-  uint32_t timeout = SPI2_WAIT_LIMIT;
-  while (((*reg & mask) != 0U) && (timeout-- > 0U)) {}
-  return ((*reg & mask) == 0U);
-}
 
 static void spi2_set_prescaler(uint32_t br_bits) {
   // RM: CR1 should be updated while SPI is disabled.
@@ -81,23 +71,23 @@ bool spi2_sd_transfer(uint8_t tx, uint8_t *rx) {
     return false;
   }
 
-  if (!spi2_wait_set(&SPI2->SR, SPI_SR_TXE)) {
+  if (!spi_wait_set_limit(&SPI2->SR, SPI_SR_TXE, SPI2_WAIT_LIMIT)) {
     return false;
   }
 
   *(__IO uint8_t *)&SPI2->DR = tx;
 
-  if (!spi2_wait_set(&SPI2->SR, SPI_SR_RXNE)) {
+  if (!spi_wait_set_limit(&SPI2->SR, SPI_SR_RXNE, SPI2_WAIT_LIMIT)) {
     return false;
   }
 
   *rx = *(__IO uint8_t *)&SPI2->DR;
 
   // Make sure the byte fully shifted before caller toggles CS.
-  if (!spi2_wait_set(&SPI2->SR, SPI_SR_TXE)) {
+  if (!spi_wait_set_limit(&SPI2->SR, SPI_SR_TXE, SPI2_WAIT_LIMIT)) {
     return false;
   }
-  if (!spi2_wait_clear(&SPI2->SR, SPI_SR_BSY)) {
+  if (!spi_wait_clear_limit(&SPI2->SR, SPI_SR_BSY, SPI2_WAIT_LIMIT)) {
     return false;
   }
 
