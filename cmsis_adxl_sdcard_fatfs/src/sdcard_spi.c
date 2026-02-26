@@ -7,6 +7,7 @@
 // Standard SD commands in SPI mode.
 #define CMD0   0U   // GO_IDLE_STATE: reset card to idle in SPI mode
 #define CMD8   8U   // SEND_IF_COND: check voltage range and SD v2 support
+#define CMD9   9U   // SEND_CSD: read card-specific data register
 #define CMD16 16U   // SET_BLOCKLEN: set block length (used for SDSC cards)
 #define CMD17 17U   // READ_SINGLE_BLOCK: read one 512-byte data block
 #define CMD24 24U   // WRITE_BLOCK: write one 512-byte data block
@@ -23,6 +24,7 @@
 #define DATA_RESP_ACCEPTED 0x05U
 
 static bool sd_high_capacity = false;
+static uint32_t sd_sector_count = 0U;
 
 static bool spi_txrx(uint8_t tx, uint8_t *rx) {
   return spi2_sd_transfer(tx, rx);
@@ -112,9 +114,81 @@ static bool sd_send_acmd(uint8_t acmd, uint32_t arg, uint8_t *r1) {
   return true;
 }
 
+static bool sd_read_data_block(uint8_t start_token, uint8_t *data, uint32_t size, uint32_t max_wait) {
+  uint8_t rx = 0xFFU;
+
+  for (uint32_t i = 0; i < max_wait; i++) {
+    if (!spi_txrx(0xFFU, &rx)) {
+      return false;
+    }
+    if (rx == start_token) {
+      break;
+    }
+  }
+  if (rx != start_token) {
+    return false;
+  }
+
+  for (uint32_t i = 0; i < size; i++) {
+    if (!spi_txrx(0xFFU, &data[i])) {
+      return false;
+    }
+  }
+
+  // Ignore CRC bytes in SPI mode when CRC is disabled.
+  if (!spi_txrx(0xFFU, &rx) || !spi_txrx(0xFFU, &rx)) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool sd_parse_sector_count_from_csd(const uint8_t csd[16], uint32_t *sector_count) {
+  if ((csd == 0) || (sector_count == 0)) {
+    return false;
+  }
+
+  uint8_t csd_structure = (uint8_t)((csd[0] >> 6) & 0x03U);
+  if (csd_structure == 1U) {
+    // CSD v2.0: memory capacity = (C_SIZE + 1) * 512 KiB.
+    uint32_t c_size = ((uint32_t)(csd[7] & 0x3FU) << 16) |
+                      ((uint32_t)csd[8] << 8) |
+                      (uint32_t)csd[9];
+    *sector_count = (c_size + 1U) * 1024U;
+    return (*sector_count > 0U);
+  }
+
+  if (csd_structure == 0U) {
+    // CSD v1.0 (SDSC): compute byte capacity from C_SIZE/C_SIZE_MULT/READ_BL_LEN.
+    uint32_t read_bl_len = (uint32_t)(csd[5] & 0x0FU);
+    uint32_t c_size = ((uint32_t)(csd[6] & 0x03U) << 10) |
+                      ((uint32_t)csd[7] << 2) |
+                      ((uint32_t)(csd[8] & 0xC0U) >> 6);
+    uint32_t c_size_mult = ((uint32_t)(csd[9] & 0x03U) << 1) |
+                           ((uint32_t)(csd[10] & 0x80U) >> 7);
+
+    uint64_t block_len = (uint64_t)1U << read_bl_len;
+    uint64_t block_count = (uint64_t)(c_size + 1U) << (c_size_mult + 2U);
+    uint64_t capacity_bytes = block_len * block_count;
+    uint64_t sectors = capacity_bytes / SDCARD_BLOCK_SIZE;
+
+    if ((sectors == 0U) || (sectors > 0xFFFFFFFFULL)) {
+      return false;
+    }
+
+    *sector_count = (uint32_t)sectors;
+    return true;
+  }
+
+  return false;
+}
+
 bool sdcard_spi_init(void) {
   uint8_t r1 = 0xFFU;
   uint8_t rx = 0U;
+  uint8_t csd[16];
+  sd_high_capacity = false;
+  sd_sector_count = 0U;
 
   spi2_sd_init();
   spi2_sd_set_slow_clock();
@@ -205,6 +279,24 @@ bool sdcard_spi_init(void) {
       spi2_sd_cs_high();
       return false;
     }
+  }
+
+  // Read CSD to determine card capacity in 512-byte sectors.
+  if (!sd_send_cmd(CMD9, 0U, 0x01U, &r1)) {
+    spi2_sd_cs_high();
+    return false;
+  }
+  if (r1 != 0x00U) {
+    spi2_sd_cs_high();
+    return false;
+  }
+  if (!sd_read_data_block(TOKEN_SINGLE_BLOCK_READ, csd, sizeof(csd), 100000U)) {
+    spi2_sd_cs_high();
+    return false;
+  }
+  if (!sd_parse_sector_count_from_csd(csd, &sd_sector_count)) {
+    spi2_sd_cs_high();
+    return false;
   }
 
   // Release card and give it one extra idle byte after command phase.
@@ -316,30 +408,7 @@ bool sdcard_spi_read_block(uint32_t lba, uint8_t *data_512) {
     return false;
   }
 
-  // Wait for start token 0xFE.
-  for (uint32_t i = 0; i < 100000U; i++) {
-    if (!spi_txrx(0xFFU, &rx)) {
-      spi2_sd_cs_high();
-      return false;
-    }
-    if (rx == TOKEN_SINGLE_BLOCK_READ) {
-      break;
-    }
-  }
-  if (rx != TOKEN_SINGLE_BLOCK_READ) {
-    spi2_sd_cs_high();
-    return false;
-  }
-
-  for (uint32_t i = 0; i < SDCARD_BLOCK_SIZE; i++) {
-    if (!spi_txrx(0xFFU, &data_512[i])) {
-      spi2_sd_cs_high();
-      return false;
-    }
-  }
-
-  // Ignore CRC bytes in SPI mode when CRC is disabled.
-  if (!spi_txrx(0xFFU, &rx) || !spi_txrx(0xFFU, &rx)) {
+  if (!sd_read_data_block(TOKEN_SINGLE_BLOCK_READ, data_512, SDCARD_BLOCK_SIZE, 100000U)) {
     spi2_sd_cs_high();
     return false;
   }
@@ -349,5 +418,18 @@ bool sdcard_spi_read_block(uint32_t lba, uint8_t *data_512) {
     return false;
   }
 
+  return true;
+}
+
+bool sdcard_spi_get_sector_count(uint32_t *sector_count) {
+  if (sector_count == 0) {
+    return false;
+  }
+
+  if (sd_sector_count == 0U) {
+    return false;
+  }
+
+  *sector_count = sd_sector_count;
   return true;
 }
