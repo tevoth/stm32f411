@@ -1,6 +1,6 @@
 #include "spi2_sd.h"
 
-#include "../../spi_common/inc/spi_wait.h"
+#include "spi_wait.h"
 
 #define SPI2_WAIT_LIMIT 100000U
 
