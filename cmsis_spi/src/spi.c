@@ -17,6 +17,21 @@ static bool spi_wait_clear(volatile uint32_t *reg, uint32_t mask) {
   return ((*reg & mask) == 0U);
 }
 
+static void spi_clear_status(void) {
+  (void)SPI1->DR;
+  (void)SPI1->SR;
+}
+
+// Best-effort timeout recovery so a failed transfer does not poison the next one.
+static void spi_recover(void) {
+  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    // Fallback if the bus is wedged: pulse SPE while preserving CR1 config.
+    SPI1->CR1 &= ~SPI_CR1_SPE;
+    SPI1->CR1 |= SPI_CR1_SPE;
+  }
+  spi_clear_status();
+}
+
 void spi_gpio_init(void) {
   // enable clock access to GPIOA
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
@@ -77,6 +92,7 @@ bool spi1_transmit(uint8_t *data, uint32_t size) {
   while (i < size) {
     // Wait for TX buffer space with timeout guard.
     if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+      spi_recover();
       return false;
     }
     
@@ -86,17 +102,17 @@ bool spi1_transmit(uint8_t *data, uint32_t size) {
   }
   // Wait until TXE is set for the last frame.
   if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    spi_recover();
     return false;
   }
 
   // Wait until SPI is no longer busy on the wire.
   if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    spi_recover();
     return false;
   }
 
-  // clear flags
-  (void)SPI1->DR;
-  (void)SPI1->SR;
+  spi_clear_status();
   return true;
 }
 
@@ -108,11 +124,13 @@ bool spi1_receive(uint8_t *data, uint32_t size) {
   while (size) {
     // set dummy data set generate SPI clock
     if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+      spi_recover();
       return false;
     }
     *(__IO uint8_t *)&SPI1->DR = 0U;
     // wait for RXNE flag to be set
     if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
+      spi_recover();
       return false;
     }
     // read data
@@ -122,15 +140,15 @@ bool spi1_receive(uint8_t *data, uint32_t size) {
 
   // wait until the last frame has fully shifted out before deasserting CS
   if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    spi_recover();
     return false;
   }
   if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    spi_recover();
     return false;
   }
 
-  // clear flags
-  (void)SPI1->DR;
-  (void)SPI1->SR;
+  spi_clear_status();
   return true;
 }
 
