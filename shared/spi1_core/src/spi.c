@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "../../spi_common/inc/spi_wait.h"
+#include "spi_wait.h"
 
 #define SPI_WAIT_LIMIT 100000U
 
