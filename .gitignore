@@ -1,2 +1,15 @@
 **/build/
 *.swp
+**/docs/*.aux
+**/docs/*.log
+**/docs/*.out
+**/docs/*.toc
+**/docs/*.fls
+**/docs/*.fdb_latexmk
+**/docs/*.synctex.gz
+stm32_projects_book.aux
+stm32_projects_book.log
+stm32_projects_book.out
+stm32_projects_book.toc
+stm32_projects_book.fls
+stm32_projects_book.fdb_latexmk
