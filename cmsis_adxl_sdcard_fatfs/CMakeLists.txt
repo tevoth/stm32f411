@@ -18,6 +18,7 @@ project(stm32_baremetal C)
 # --- Target config (EDIT THESE) ---
 set(TARGET_NAME    firmware)
 set(LINKER_SCRIPT  ${CMAKE_SOURCE_DIR}/ld/stm32_flash.ld)  # <-- your .ld file
+set(SHARED_SPI1_ADXL_DIR ${CMAKE_SOURCE_DIR}/../shared/spi1_adxl)
 
 # CPU/ABI flags (pick the right core/FPU for your STM32)
 set(MCPU_FLAGS   
@@ -44,10 +45,15 @@ file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
 )
 
 add_executable(${TARGET_NAME}.elf ${APP_SOURCES})
+target_sources(${TARGET_NAME}.elf PRIVATE
+  ${SHARED_SPI1_ADXL_DIR}/src/spi.c
+  ${SHARED_SPI1_ADXL_DIR}/src/adxl345.c
+)
 
 target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${CMAKE_SOURCE_DIR}/inc
   ${CMAKE_SOURCE_DIR}/inc/fatfs
+  ${SHARED_SPI1_ADXL_DIR}/inc
   ${CMAKE_SOURCE_DIR}/../CMSIS/Include
   ${CMAKE_SOURCE_DIR}/../CMSIS/Device/ST/STM32F4xx/Include
 )
