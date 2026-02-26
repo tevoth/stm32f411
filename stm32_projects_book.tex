@@ -1,0 +1,20 @@
+\documentclass[11pt]{book}
+\input{docs/latex/book_preamble.tex}
+
+\title{STM32F411 Project Documentation Book}
+\author{Project Notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\input{cmsis_adxl_sdcard/docs/cmsis_adxl_sdcard_chapter_body.tex}
+\input{cmsis_adxl_sdcard_fatfs/docs/cmsis_adxl_sdcard_fatfs_chapter_body.tex}
+
+\chapter*{Cross-Chapter References}
+This combined book supports cross-references between chapters.
+For example, the raw-sector chapter is Chapter~\ref{ch:raw-sd},
+and the FatFs follow-on chapter is Chapter~\ref{ch:fatfs-followon}.
+
+\end{document}

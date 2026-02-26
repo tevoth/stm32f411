@@ -1,0 +1,215 @@
+\chapter{From Raw Sectors to Files}
+\label{ch:fatfs-followon}
+
+This chapter is a continuation of Chapter~\ref{ch:raw-sd} for
+\texttt{cmsis\_adxl\_sdcard}. It assumes you already understand:
+\begin{itemize}[leftmargin=*]
+\item SPI transaction framing and chip-select timing,
+\item SD card SPI initialization (CMD0/CMD8/ACMD41/CMD58), and
+\item 512-byte block read/write primitives.
+\end{itemize}
+
+What changes here is \textbf{where writes are targeted}: not fixed LBAs, but a named file
+(\texttt{0:adxl\_log.csv}) managed by FatFs.
+
+\section{Design Delta from the Raw-Sector Project}
+
+The two projects share the same hardware split:
+\begin{itemize}[leftmargin=*]
+\item SPI1 for ADXL345
+\item SPI2 for microSD
+\item USART2 TX for live monitoring
+\end{itemize}
+
+The key software delta is layering:
+\begin{enumerate}[leftmargin=*]
+\item SD SPI driver still provides sector-level operations.
+\item A \texttt{diskio} port maps FatFs requests to those sector operations.
+\item Application code uses FatFs file APIs (mount, open, write, sync).
+\end{enumerate}
+
+\section{Application Flow with FatFs}
+
+The main loop still reads ADXL and prints UART telemetry, but logging now goes through
+\texttt{f\_write()} into a CSV file.
+
+\begin{lstlisting}[style=cstyle,caption={Main FatFs logging flow (condensed from src/main.c)}]
+FATFS fs;
+FIL file;
+FRESULT fr;
+
+fr = f_mount(&fs, "0:", 1);
+if (fr != FR_OK) {
+  while (1) {
+    printf("f_mount failed: %d\n", (int)fr);
+    systick_msec_delay(500);
+  }
+}
+
+fr = f_open(&file, "0:adxl_log.csv", FA_OPEN_APPEND | FA_WRITE);
+if (fr != FR_OK) {
+  while (1) {
+    printf("f_open failed: %d\n", (int)fr);
+    systick_msec_delay(500);
+  }
+}
+
+if (f_size(&file) == 0U) {
+  const char *header = "sample,ax_mg,ay_mg,az_mg\r\n";
+  UINT bw = 0U;
+  fr = f_write(&file, header, (UINT)strlen(header), &bw);
+  if ((fr != FR_OK) || (bw != (UINT)strlen(header))) {
+    while (1) {
+      printf("header write failed: %d\n", (int)fr);
+      systick_msec_delay(500);
+    }
+  }
+  (void)f_sync(&file);
+}
+
+while (1) {
+  // read ADXL sample and convert to mg (same as prior chapter)
+  // ...
+
+  char line[128];
+  int n = snprintf(line, sizeof(line), "%lu,%ld,%ld,%ld\r\n", ...);
+  if (n > 0) {
+    UINT bw = 0U;
+    printf("sample=%lu ...\n", ...); // UART remains active
+
+    fr = f_write(&file, line, (UINT)n, &bw);
+    if ((fr != FR_OK) || (bw != (UINT)n)) {
+      printf("f_write failed: %d\n", (int)fr);
+    }
+
+    if ((sample_index % 10U) == 0U) {
+      fr = f_sync(&file);
+      if (fr != FR_OK) {
+        printf("f_sync failed: %d\n", (int)fr);
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+\section{Why \texttt{f\_sync()} Every N Samples?}
+
+FatFs and SD cards buffer state. If power drops before sync/close,
+recent data and metadata can be lost.
+
+This project uses a periodic sync policy (every 10 samples):
+\begin{itemize}[leftmargin=*]
+\item lower loss window than syncing only at shutdown,
+\item less overhead than syncing every single line,
+\item practical for interactive logging while debugging firmware.
+\end{itemize}
+
+\section{The Disk I/O Bridge: FatFs to SPI Blocks}
+
+FatFs is filesystem logic. It still needs low-level block device hooks.
+That contract lives in \texttt{src/fatfs/diskio\_port.c}.
+
+\begin{lstlisting}[style=cstyle,caption={Core diskio mapping in this project}]
+DSTATUS disk_initialize(BYTE pdrv) {
+  if (pdrv != 0U) return STA_NOINIT;
+  return sdcard_spi_init() ? 0U : STA_NOINIT;
+}
+
+DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
+  if ((pdrv != 0U) || (buff == 0) || (count == 0U)) return RES_PARERR;
+  for (UINT i = 0; i < count; i++) {
+    if (!sdcard_spi_read_block((uint32_t)sector + i, &buff[i * 512U])) {
+      return RES_ERROR;
+    }
+  }
+  return RES_OK;
+}
+
+DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
+  if ((pdrv != 0U) || (buff == 0) || (count == 0U)) return RES_PARERR;
+  for (UINT i = 0; i < count; i++) {
+    if (!sdcard_spi_write_block((uint32_t)sector + i, &buff[i * 512U])) {
+      return RES_ERROR;
+    }
+  }
+  return RES_OK;
+}
+\end{lstlisting}
+
+\noindent
+Conceptually, this layer is the most important addition versus the raw-sector project.
+It lets FatFs treat your SD SPI driver as a generic block device.
+
+\section{SD Driver Changes for FatFs}
+
+Compared with the raw-sector project, the SD SPI module adds block read support:
+\begin{itemize}[leftmargin=*]
+\item \texttt{CMD17} single-block read path,
+\item wait for start token \texttt{0xFE},
+\item receive exactly 512 bytes plus 2 CRC bytes.
+\end{itemize}
+
+\begin{lstlisting}[style=cstyle,caption={Single-block read in SPI mode (condensed)}]
+bool sdcard_spi_read_block(uint32_t lba, uint8_t *data_512) {
+  // ... send CMD17 ...
+
+  // Wait for start token 0xFE
+  for (uint32_t i = 0; i < 100000U; i++) {
+    if (!spi_txrx(0xFFU, &rx)) return false;
+    if (rx == 0xFEU) break;
+  }
+  if (rx != 0xFEU) return false;
+
+  for (uint32_t i = 0; i < 512U; i++) {
+    if (!spi_txrx(0xFFU, &data_512[i])) return false;
+  }
+
+  // ignore 2 CRC bytes when SPI CRC checking is disabled
+  if (!spi_txrx(0xFFU, &rx) || !spi_txrx(0xFFU, &rx)) return false;
+  return true;
+}
+\end{lstlisting}
+
+\section{CSV Format and Host Workflow}
+
+Because this project writes through FatFs, the card remains host-friendly:
+\begin{itemize}[leftmargin=*]
+\item file: \texttt{adxl\_log.csv}
+\item header: \texttt{sample,ax\_mg,ay\_mg,az\_mg}
+\item rows: one sample per line with CRLF endings
+\end{itemize}
+
+That means you can remove the card and open the file directly in spreadsheet or analysis tools,
+which is the practical advantage over raw fixed-LBA logging.
+
+\section{Error Behavior}
+
+The application handles errors in two categories:
+\begin{itemize}[leftmargin=*]
+\item \textbf{startup-fatal}: mount/open/header failures stay in a visible error loop.
+\item \textbf{runtime-nonfatal}: write/sync failures print status over UART and keep sampling.
+\end{itemize}
+
+This preserves observability while exposing storage problems in real time.
+
+\section{Testing Checklist}
+
+\begin{enumerate}[leftmargin=*]
+\item Format SD card as FAT32.
+\item Flash firmware and open UART at 115200 8N1.
+\item Confirm boot banner and sample stream.
+\item Power cycle once to verify append behavior (file grows, no header duplication).
+\item Remove card and inspect \texttt{adxl\_log.csv} on host.
+\end{enumerate}
+
+\chapter*{Appendix: Relationship to the Previous Chapter}
+
+Use Chapter~\ref{ch:raw-sd} for SPI/SD protocol grounding:
+\begin{itemize}[leftmargin=*]
+\item Raw-sector chapter in this combined book (label: \texttt{ch:raw-sd})
+\end{itemize}
+
+Use Chapter~\ref{ch:fatfs-followon} for filesystem integration concepts:
+\begin{itemize}[leftmargin=*]
+\item FatFs chapter in this combined book (label: \texttt{ch:fatfs-followon})
+\end{itemize}

@@ -1,4 +1,4 @@
-name: Build Firmware
+name: Build Firmware and Docs
 
 on:
   pull_request:
@@ -51,3 +51,25 @@ jobs:
             cmsis_*/build/firmware.elf
             cmsis_*/build/firmware.hex
             cmsis_*/build/firmware.bin
+
+  build-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build LaTeX book
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: stm32_projects_book.tex
+          args: -pdf -interaction=nonstopmode -halt-on-error
+
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            stm32_projects_book.pdf
