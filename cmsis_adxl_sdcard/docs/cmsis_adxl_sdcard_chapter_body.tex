@@ -108,6 +108,17 @@ int main(void) {
 }
 \end{lstlisting}
 
+\subsection*{Macro Purpose (Raw-SD Project)}
+The SD logging macros are configuration points, not arbitrary constants:
+\begin{itemize}[leftmargin=*]
+\item \texttt{LOG\_START\_LBA}: first logical block used for logging. It defines \emph{where} raw data begins on card. Picking a fixed LBA avoids filesystem logic, but you must choose a safe region because writes overwrite existing sectors.
+\item \texttt{LOG\_SECTOR\_SIZE}: size of one SD block in bytes (512). It defines buffer size and flush granularity so each write maps to one native SD block transaction.
+\end{itemize}
+
+In the refactored source these constants appear as
+\texttt{SD\_RAW\_LOG\_START\_LBA} and \texttt{SD\_RAW\_LOG\_SECTOR\_SIZE}
+inside the dedicated raw logger module, with the same functional roles.
+
 \subsection*{Why the 16-sample periodic flush?}
 Without flushing, a partial sector stays in RAM until full. Periodic flushing gives earlier on-card visibility,
 which is useful during bring-up and debugging.
@@ -160,6 +171,17 @@ Initialization follows the standard SPI-mode progression for SD v2 cards:
 \item If not high capacity, issue \texttt{CMD16} for 512-byte blocks.
 \item Deassert CS, send one extra idle byte, then raise SPI clock.
 \end{enumerate}
+
+\subsection*{What the SD Commands Mean}
+\begin{itemize}[leftmargin=*]
+\item \texttt{CMD0}: reset card into SPI idle state.
+\item \texttt{CMD8}: interface-condition check (voltage range + pattern \texttt{0x1AA}) used to confirm SD v2-style behavior.
+\item \texttt{CMD55}: prefix that tells the card the next command is application-specific.
+\item \texttt{ACMD41}: application init command that exits idle when card power-up is complete (HCS bit requests high-capacity addressing mode).
+\item \texttt{CMD58}: read OCR register to confirm card power status and CCS (high-capacity) bit.
+\item \texttt{CMD16}: set block length (used for SDSC cards; SDHC/SDXC fixed to 512-byte blocks).
+\item \texttt{CMD24}: write one data block (single-block write).
+\end{itemize}
 
 \begin{lstlisting}[style=cstyle,caption={Representative command framing in SPI mode}]
 static bool sd_send_cmd(uint8_t cmd, uint32_t arg, uint8_t crc, uint8_t *r1) {

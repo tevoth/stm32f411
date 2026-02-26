@@ -149,6 +149,17 @@ Compared with the raw-sector project, the SD SPI module adds block read support:
 \item receive exactly 512 bytes plus 2 CRC bytes.
 \end{itemize}
 
+\subsection*{What the SD Commands Mean}
+\begin{itemize}[leftmargin=*]
+\item \texttt{CMD0}: reset card into SPI idle state.
+\item \texttt{CMD8}: interface-condition check for SD v2 cards.
+\item \texttt{CMD55} + \texttt{ACMD41}: app-command prefix and initialization pair used to leave idle state.
+\item \texttt{CMD58}: read OCR to confirm power-up status and capacity mode.
+\item \texttt{CMD16}: set block length on SDSC cards when needed.
+\item \texttt{CMD17}: read one 512-byte block (single-block read).
+\item \texttt{CMD24}: write one 512-byte block (single-block write), used under FatFs via disk I/O write path.
+\end{itemize}
+
 \begin{lstlisting}[style=cstyle,caption={Single-block read in SPI mode (condensed)}]
 bool sdcard_spi_read_block(uint32_t lba, uint8_t *data_512) {
   // ... send CMD17 ...
