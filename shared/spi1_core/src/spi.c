@@ -1,7 +1,20 @@
 #include "spi.h"
+
 #include <stdbool.h>
 
 #define SPI_WAIT_LIMIT 100000U
+
+#ifndef SPI1_CFG_CPOL
+#define SPI1_CFG_CPOL 1
+#endif
+
+#ifndef SPI1_CFG_CPHA
+#define SPI1_CFG_CPHA 1
+#endif
+
+#ifndef SPI1_CFG_MISO_PULLUP
+#define SPI1_CFG_MISO_PULLUP 0
+#endif
 
 // Wait until status bits are set; false indicates timeout.
 static bool spi_wait_set(volatile uint32_t *reg, uint32_t mask) {
@@ -39,27 +52,30 @@ void spi_gpio_init(void) {
   // Set PA5, PA6, PA7 to alternate-function mode
   for (uint16_t pin = 5; pin < 8; pin++) {
     GPIOA->MODER &= ~(1U << (pin * 2));
-    GPIOA->MODER |=  (2U << (pin * 2));
+    GPIOA->MODER |= (2U << (pin * 2));
   }
   GPIOA->OTYPER &= ~(GPIO_OTYPER_OT5 | GPIO_OTYPER_OT7);
-  GPIOA->PUPDR  &= ~(GPIO_PUPDR_PUPD5_Msk | GPIO_PUPDR_PUPD6_Msk | GPIO_PUPDR_PUPD7_Msk);
+  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPD5_Msk | GPIO_PUPDR_PUPD6_Msk | GPIO_PUPDR_PUPD7_Msk);
+
+#if SPI1_CFG_MISO_PULLUP
   // Bias MISO high so unplugged sensor does not leave the input floating.
-  GPIOA->PUPDR  |= GPIO_PUPDR_PUPD6_0;
+  GPIOA->PUPDR |= GPIO_PUPDR_PUPD6_0;
+#endif
 
   // Set PA4 as output pin (chip-select)
-  GPIOA->MODER |=  (1U << (4 * 2));
+  GPIOA->MODER |= (1U << (4 * 2));
   GPIOA->MODER &= ~(2U << (4 * 2));
   GPIOA->OTYPER &= ~(GPIO_OTYPER_OT4);
-  GPIOA->PUPDR  &= ~(GPIO_PUPDR_PUPD4_Msk);
+  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPD4_Msk);
 
   // default CS high (inactive)
   GPIOA->BSRR = GPIO_BSRR_BS4;
 
   // Set PA5, PA6, PA7 to AF type SPI
   for (uint16_t pin = 5; pin < 8; pin++) {
-    GPIOA->AFR[0] |=  (1U << (pin * 4));
+    GPIOA->AFR[0] |= (1U << (pin * 4));
     GPIOA->AFR[0] &= ~(2U << (pin * 4));
-    GPIOA->AFR[0] |=  (4U << (pin * 4));
+    GPIOA->AFR[0] |= (4U << (pin * 4));
     GPIOA->AFR[0] &= ~(8U << (pin * 4));
   }
 }
@@ -76,7 +92,12 @@ void spi1_config(void) {
   uint32_t cr1 = 0U;
   cr1 |= SPI_CR1_MSTR; // master mode
   cr1 |= SPI_CR1_BR_0; // fPCLK/4
-  // MAX6675 uses SPI mode 0 (CPOL=0, CPHA=0).
+#if SPI1_CFG_CPHA
+  cr1 |= SPI_CR1_CPHA;
+#endif
+#if SPI1_CFG_CPOL
+  cr1 |= SPI_CR1_CPOL;
+#endif
   cr1 |= SPI_CR1_SSI | SPI_CR1_SSM; // software slave management
   SPI1->CR1 = cr1;
 
@@ -96,8 +117,8 @@ bool spi1_transmit(uint8_t *data, uint32_t size) {
       spi_recover();
       return false;
     }
-    
-    // data ready, right to data register
+
+    // data ready, write to data register
     *(__IO uint8_t *)&SPI1->DR = data[i];
     i++;
   }
@@ -114,7 +135,6 @@ bool spi1_transmit(uint8_t *data, uint32_t size) {
   }
 
   spi_clear_status();
-
   return true;
 }
 
@@ -124,17 +144,19 @@ bool spi1_receive(uint8_t *data, uint32_t size) {
   }
 
   while (size) {
-    // set dummy data set generate SPI clock
+    // set dummy data to generate SPI clock
     if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
       spi_recover();
       return false;
     }
     *(__IO uint8_t *)&SPI1->DR = 0U;
+
     // wait for RXNE flag to be set
     if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
       spi_recover();
       return false;
     }
+
     // read data
     *data++ = *(__IO uint8_t *)&SPI1->DR;
     size--;
