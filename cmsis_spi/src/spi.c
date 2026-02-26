@@ -25,7 +25,7 @@ static void spi_clear_status(void) {
 // Best-effort timeout recovery so a failed transfer does not poison the next one.
 static void spi_recover(void) {
   if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
-    // Fallback if the bus is wedged: pulse SPE while preserving CR1 config.
+    // Fallback if SPI remains busy/stuck: pulse SPE while preserving CR1 config.
     SPI1->CR1 &= ~SPI_CR1_SPE;
     SPI1->CR1 |= SPI_CR1_SPE;
   }
