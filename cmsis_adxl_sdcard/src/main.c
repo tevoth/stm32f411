@@ -14,7 +14,12 @@
 static uint8_t adxl_raw[6];
 
 int main(void) {
-  system_init();
+  if (!system_init()) {
+    while (1) {
+      printf("system_init failed\n");
+      systick_msec_delay(500);
+    }
+  }
   led_init();
   uart_init();
 

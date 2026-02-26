@@ -1,3 +1,5 @@
 #pragma once
 
-void system_init(void);
+#include <stdbool.h>
+
+bool system_init(void);

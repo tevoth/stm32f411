@@ -2,7 +2,7 @@
 \label{ch:fatfs-followon}
 
 This chapter is a continuation of Chapter~\ref{ch:raw-sd} for
-\texttt{cmsis\_adxl\_sdcard}. It assumes you already understand:
+\texttt{cmsis\_adxl\_sdcard\_fatfs}. It assumes you already understand:
 \begin{itemize}[leftmargin=*]
 \item SPI transaction framing and chip-select timing,
 \item SD card SPI initialization (CMD0/CMD8/ACMD41/CMD58), and
@@ -25,68 +25,41 @@ The key software delta is layering:
 \begin{enumerate}[leftmargin=*]
 \item SD SPI driver still provides sector-level operations.
 \item A \texttt{diskio} port maps FatFs requests to those sector operations.
-\item Application code uses FatFs file APIs (mount, open, write, sync).
+\item Application code calls a logger module (\texttt{fatfs\_log}) that wraps FatFs file APIs.
 \end{enumerate}
 
 \section{Application Flow with FatFs}
 
-The main loop still reads ADXL and prints UART telemetry, but logging now goes through
-\texttt{f\_write()} into a CSV file.
+The main loop still reads ADXL and prints UART telemetry, but SD file operations are
+centralized in \texttt{fatfs\_log\_init()} and \texttt{fatfs\_log\_append\_line()}.
 
 \begin{lstlisting}[style=cstyle,caption={Main FatFs logging flow (condensed from src/main.c)}]
-FATFS fs;
-FIL file;
-FRESULT fr;
-
-fr = f_mount(&fs, "0:", 1);
-if (fr != FR_OK) {
+if (!system_init()) {
   while (1) {
-    printf("f_mount failed: %d\n", (int)fr);
+    printf("system_init failed\n");
     systick_msec_delay(500);
   }
 }
 
-fr = f_open(&file, "0:adxl_log.csv", FA_OPEN_APPEND | FA_WRITE);
-if (fr != FR_OK) {
+bool sd_logging_enabled = fatfs_log_init();
+if (!sd_logging_enabled) {
   while (1) {
-    printf("f_open failed: %d\n", (int)fr);
+    printf("FatFs logger init failed\n");
     systick_msec_delay(500);
   }
-}
-
-if (f_size(&file) == 0U) {
-  const char *header = "sample,ax_mg,ay_mg,az_mg\r\n";
-  UINT bw = 0U;
-  fr = f_write(&file, header, (UINT)strlen(header), &bw);
-  if ((fr != FR_OK) || (bw != (UINT)strlen(header))) {
-    while (1) {
-      printf("header write failed: %d\n", (int)fr);
-      systick_msec_delay(500);
-    }
-  }
-  (void)f_sync(&file);
 }
 
 while (1) {
-  // read ADXL sample and convert to mg (same as prior chapter)
+  // read ADXL sample and convert to mg
   // ...
-
   char line[128];
-  int n = snprintf(line, sizeof(line), "%lu,%ld,%ld,%ld\r\n", ...);
+  int n = snprintf(line, sizeof(line), "%" PRIu32 ",%" PRId32 ",%" PRId32 ",%" PRId32 "\r\n", ...);
+
   if (n > 0) {
-    UINT bw = 0U;
-    printf("sample=%lu ...\n", ...); // UART remains active
-
-    fr = f_write(&file, line, (UINT)n, &bw);
-    if ((fr != FR_OK) || (bw != (UINT)n)) {
-      printf("f_write failed: %d\n", (int)fr);
-    }
-
-    if ((sample_index % 10U) == 0U) {
-      fr = f_sync(&file);
-      if (fr != FR_OK) {
-        printf("f_sync failed: %d\n", (int)fr);
-      }
+    printf("sample=%" PRIu32 " ...\n", ...); // UART remains active
+    if (sd_logging_enabled && !fatfs_log_append_line(line)) {
+      printf("FatFs write failed; disabling SD logging\n");
+      sd_logging_enabled = false;
     }
   }
 }
@@ -110,15 +83,25 @@ FatFs is filesystem logic. It still needs low-level block device hooks.
 That contract lives in \texttt{src/fatfs/diskio\_port.c}.
 
 \begin{lstlisting}[style=cstyle,caption={Core diskio mapping in this project}]
+static DSTATUS sd_status = STA_NOINIT;
+
 DSTATUS disk_initialize(BYTE pdrv) {
   if (pdrv != 0U) return STA_NOINIT;
-  return sdcard_spi_init() ? 0U : STA_NOINIT;
+  sd_status = sdcard_spi_init() ? 0U : STA_NOINIT;
+  return sd_status;
+}
+
+DSTATUS disk_status(BYTE pdrv) {
+  if (pdrv != 0U) return STA_NOINIT;
+  return sd_status;
 }
 
 DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
   if ((pdrv != 0U) || (buff == 0) || (count == 0U)) return RES_PARERR;
+  if ((sd_status & STA_NOINIT) != 0U) return RES_NOTRDY;
   for (UINT i = 0; i < count; i++) {
     if (!sdcard_spi_read_block((uint32_t)sector + i, &buff[i * 512U])) {
+      sd_status = STA_NOINIT;
       return RES_ERROR;
     }
   }
@@ -127,12 +110,21 @@ DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
 
 DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
   if ((pdrv != 0U) || (buff == 0) || (count == 0U)) return RES_PARERR;
+  if ((sd_status & STA_NOINIT) != 0U) return RES_NOTRDY;
   for (UINT i = 0; i < count; i++) {
     if (!sdcard_spi_write_block((uint32_t)sector + i, &buff[i * 512U])) {
+      sd_status = STA_NOINIT;
       return RES_ERROR;
     }
   }
   return RES_OK;
+}
+
+DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
+  if (cmd == GET_SECTOR_COUNT) {
+    return sdcard_spi_get_sector_count((uint32_t *)buff) ? RES_OK : RES_ERROR;
+  }
+  // ...
 }
 \end{lstlisting}
 
@@ -147,12 +139,14 @@ Compared with the raw-sector project, the SD SPI module adds block read support:
 \item \texttt{CMD17} single-block read path,
 \item wait for start token \texttt{0xFE},
 \item receive exactly 512 bytes plus 2 CRC bytes.
+\item \texttt{CMD9} CSD read path to derive real sector count for \texttt{GET\_SECTOR\_COUNT}.
 \end{itemize}
 
 \subsection*{What the SD Commands Mean}
 \begin{itemize}[leftmargin=*]
 \item \texttt{CMD0}: reset card into SPI idle state.
 \item \texttt{CMD8}: interface-condition check for SD v2 cards.
+\item \texttt{CMD9}: read CSD register; used to compute total 512-byte logical sectors.
 \item \texttt{CMD55} + \texttt{ACMD41}: app-command prefix and initialization pair used to leave idle state.
 \item \texttt{CMD58}: read OCR to confirm power-up status and capacity mode.
 \item \texttt{CMD16}: set block length on SDSC cards when needed.
@@ -160,25 +154,19 @@ Compared with the raw-sector project, the SD SPI module adds block read support:
 \item \texttt{CMD24}: write one 512-byte block (single-block write), used under FatFs via disk I/O write path.
 \end{itemize}
 
-\begin{lstlisting}[style=cstyle,caption={Single-block read in SPI mode (condensed)}]
+\begin{lstlisting}[style=cstyle,caption={Read path in SPI mode (condensed)}]
+static bool sd_read_data_block(uint8_t token, uint8_t *data, uint32_t size, uint32_t max_wait);
+
 bool sdcard_spi_read_block(uint32_t lba, uint8_t *data_512) {
   // ... send CMD17 ...
-
-  // Wait for start token 0xFE
-  for (uint32_t i = 0; i < 100000U; i++) {
-    if (!spi_txrx(0xFFU, &rx)) return false;
-    if (rx == 0xFEU) break;
-  }
-  if (rx != 0xFEU) return false;
-
-  for (uint32_t i = 0; i < 512U; i++) {
-    if (!spi_txrx(0xFFU, &data_512[i])) return false;
-  }
-
-  // ignore 2 CRC bytes when SPI CRC checking is disabled
-  if (!spi_txrx(0xFFU, &rx) || !spi_txrx(0xFFU, &rx)) return false;
+  if (!sd_read_data_block(0xFEU, data_512, 512U, 100000U)) return false;
   return true;
 }
+
+// During init, CMD9 returns the CSD payload (16 bytes).
+if (!sd_send_cmd(CMD9, 0U, 0x01U, &r1)) return false;
+if (!sd_read_data_block(0xFEU, csd, 16U, 100000U)) return false;
+if (!sd_parse_sector_count_from_csd(csd, &sd_sector_count)) return false;
 \end{lstlisting}
 
 \section{CSV Format and Host Workflow}
@@ -197,8 +185,8 @@ which is the practical advantage over raw fixed-LBA logging.
 
 The application handles errors in two categories:
 \begin{itemize}[leftmargin=*]
-\item \textbf{startup-fatal}: mount/open/header failures stay in a visible error loop.
-\item \textbf{runtime-nonfatal}: write/sync failures print status over UART and keep sampling.
+\item \textbf{startup-fatal}: \texttt{system\_init()} or \texttt{fatfs\_log\_init()} failures stay in a visible error loop.
+\item \textbf{runtime-nonfatal}: append/sync failures disable SD logging and keep UART sample output active.
 \end{itemize}
 
 This preserves observability while exposing storage problems in real time.

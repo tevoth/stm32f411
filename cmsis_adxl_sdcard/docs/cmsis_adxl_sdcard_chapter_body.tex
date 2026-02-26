@@ -37,20 +37,18 @@ This project writes raw blocks with \texttt{CMD24}. It does \textbf{not} impleme
 \section{Main Control Flow}
 
 The top-level loop is intentionally simple: initialize peripherals, read ADXL samples,
-format a text line, send to UART, and append/flush to SD.
+format a text line, send to UART, and call the raw logger module.
 
 \begin{lstlisting}[style=cstyle,caption={Main logging loop (condensed from src/main.c)}]
-#define LOG_START_LBA 32768U
-#define LOG_SECTOR_SIZE 512U
-
 static uint8_t adxl_raw[6];
-static uint8_t log_sector[LOG_SECTOR_SIZE];
-static uint32_t log_sector_offset = 0U;
-static uint32_t next_log_lba = LOG_START_LBA;
-static bool sd_available = false;
 
 int main(void) {
-  system_init();
+  if (!system_init()) {
+    while (1) {
+      printf("system_init failed\n");
+      systick_msec_delay(500);
+    }
+  }
   led_init();
   uart_init();
 
@@ -61,7 +59,7 @@ int main(void) {
     }
   }
 
-  sd_available = sdcard_spi_init();
+  bool sd_logging_enabled = sd_raw_log_init();
 
   uint32_t sample_index = 0U;
   while (1) {
@@ -88,17 +86,17 @@ int main(void) {
       (long)ax_mg, (long)ay_mg, (long)az_mg);
 
     if (n > 0) {
-      printf("%s", line);                  // live monitoring over UART
-      if (sd_available && !log_append_line(line)) {
+      printf("%s", line); // live monitoring over UART
+      if (sd_logging_enabled && !sd_raw_log_append_line(line)) {
         printf("microSD append failed; disabling SD logging\\n");
-        sd_available = false;
+        sd_logging_enabled = false;
       }
     }
 
-    if (sd_available && (sample_index % 16U == 15U) && (log_sector_offset > 0U)) {
-      if (!log_flush_sector()) {
+    if (sd_logging_enabled && (sample_index % 16U == 15U)) {
+      if (!sd_raw_log_flush_pending()) {
         printf("microSD flush failed; disabling SD logging\\n");
-        sd_available = false;
+        sd_logging_enabled = false;
       }
     }
 
@@ -111,13 +109,9 @@ int main(void) {
 \subsection*{Macro Purpose (Raw-SD Project)}
 The SD logging macros are configuration points, not arbitrary constants:
 \begin{itemize}[leftmargin=*]
-\item \texttt{LOG\_START\_LBA}: first logical block used for logging. It defines \emph{where} raw data begins on card. Picking a fixed LBA avoids filesystem logic, but you must choose a safe region because writes overwrite existing sectors.
-\item \texttt{LOG\_SECTOR\_SIZE}: size of one SD block in bytes (512). It defines buffer size and flush granularity so each write maps to one native SD block transaction.
+\item \texttt{SD\_RAW\_LOG\_START\_LBA}: first logical block used for logging. It defines \emph{where} raw data begins on card. Picking a fixed LBA avoids filesystem logic, but you must choose a safe region because writes overwrite existing sectors.
+\item \texttt{SD\_RAW\_LOG\_SECTOR\_SIZE}: size of one SD block in bytes (512). It defines buffer size and flush granularity so each write maps to one native SD block transaction.
 \end{itemize}
-
-In the refactored source these constants appear as
-\texttt{SD\_RAW\_LOG\_START\_LBA} and \texttt{SD\_RAW\_LOG\_SECTOR\_SIZE}
-inside the dedicated raw logger module, with the same functional roles.
 
 \subsection*{Why the 16-sample periodic flush?}
 Without flushing, a partial sector stays in RAM until full. Periodic flushing gives earlier on-card visibility,
@@ -220,21 +214,22 @@ For each 512-byte payload:
 
 This maps cleanly to how SD cards internally program NAND pages while host-side SPI clocks continue.
 
-\section{Log Buffering Strategy}
+\section{Raw Logger Module Strategy}
 
-A RAM sector buffer collects variable-length text lines and writes full blocks.
+The dedicated logger module (\texttt{src/sd\_raw\_log.c}) owns the RAM sector buffer.
+It collects variable-length text lines and writes full blocks.
 
-\begin{lstlisting}[style=cstyle,caption={Append and flush behavior}]
-static bool log_append_line(const char *line) {
+\begin{lstlisting}[style=cstyle,caption={Append behavior in raw logger module}]
+bool sd_raw_log_append_line(const char *line) {
   size_t len = strlen(line);
   size_t i = 0U;
 
   while (i < len) {
-    if (log_sector_offset >= LOG_SECTOR_SIZE) {
-      if (!log_flush_sector()) return false;
+    if (log_sector_offset >= SD_RAW_LOG_SECTOR_SIZE) {
+      if (!sd_raw_log_flush_sector()) return false;
     }
 
-    uint32_t remaining = LOG_SECTOR_SIZE - log_sector_offset;
+    uint32_t remaining = SD_RAW_LOG_SECTOR_SIZE - log_sector_offset;
     size_t chunk = len - i;
     if (chunk > remaining) chunk = remaining;
 
