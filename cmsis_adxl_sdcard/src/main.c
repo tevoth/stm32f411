@@ -2,80 +2,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "adxl345.h"
 #include "led.h"
-#include "sdcard_spi.h"
+#include "sd_raw_log.h"
 #include "systick_msec_delay.h"
 #include "system_init.h"
 #include "uart.h"
 
-// ---------- SD logging configuration ----------
-// WARNING: this demo writes raw sectors, not a FAT filesystem.
-// Use a dedicated test card or pick LBAs you are okay to overwrite.
-#define LOG_START_LBA 32768U
-#define LOG_SECTOR_SIZE 512U
-
 // 6 bytes from ADXL345: X0 X1 Y0 Y1 Z0 Z1.
 static uint8_t adxl_raw[6];
-
-// One in-RAM sector buffer. We append text lines until full, then write 1 sector.
-static uint8_t log_sector[LOG_SECTOR_SIZE];
-static uint32_t log_sector_offset = 0U;
-static uint32_t next_log_lba = LOG_START_LBA;
-
-static bool sd_available = false;
-
-static bool log_flush_sector(void) {
-  if (!sd_available) {
-    return false;
-  }
-
-  // Fill unused bytes with '\n' so a hex dump is easier to inspect.
-  while (log_sector_offset < LOG_SECTOR_SIZE) {
-    log_sector[log_sector_offset++] = '\n';
-  }
-
-  if (!sdcard_spi_write_block(next_log_lba, log_sector)) {
-    return false;
-  }
-
-  next_log_lba++;
-  log_sector_offset = 0U;
-  memset(log_sector, 0, sizeof(log_sector));
-  return true;
-}
-
-static bool log_append_line(const char *line) {
-  if (!sd_available || (line == 0)) {
-    return false;
-  }
-
-  size_t len = strlen(line);
-  size_t i = 0U;
-
-  // Stream line bytes into 512-byte sectors.
-  while (i < len) {
-    if (log_sector_offset >= LOG_SECTOR_SIZE) {
-      if (!log_flush_sector()) {
-        return false;
-      }
-    }
-
-    uint32_t remaining = LOG_SECTOR_SIZE - log_sector_offset;
-    size_t chunk = len - i;
-    if (chunk > remaining) {
-      chunk = remaining;
-    }
-
-    memcpy(&log_sector[log_sector_offset], &line[i], chunk);
-    log_sector_offset += (uint32_t)chunk;
-    i += chunk;
-  }
-
-  return true;
-}
 
 int main(void) {
   system_init();
@@ -92,9 +28,9 @@ int main(void) {
     }
   }
 
-  sd_available = sdcard_spi_init();
-  if (sd_available) {
-    printf("microSD init OK (raw log start LBA=%" PRIu32 ")\n", next_log_lba);
+  bool sd_logging_enabled = sd_raw_log_init();
+  if (sd_logging_enabled) {
+    printf("microSD init OK (raw log start LBA=%" PRIu32 ")\n", (uint32_t)SD_RAW_LOG_START_LBA);
   } else {
     printf("microSD init FAILED, continuing with UART only\n");
   }
@@ -130,19 +66,19 @@ int main(void) {
       printf("%s", line);
 
       // Also append to SD log when card is available.
-      if (sd_available) {
-        if (!log_append_line(line)) {
+      if (sd_logging_enabled) {
+        if (!sd_raw_log_append_line(line)) {
           printf("microSD append failed; disabling SD logging\n");
-          sd_available = false;
+          sd_logging_enabled = false;
         }
       }
     }
 
     // Force out partial sector periodically so logs appear sooner on card.
-    if (sd_available && (sample_index % 16U == 15U) && (log_sector_offset > 0U)) {
-      if (!log_flush_sector()) {
+    if (sd_logging_enabled && (sample_index % 16U == 15U)) {
+      if (!sd_raw_log_flush_pending()) {
         printf("microSD flush failed; disabling SD logging\n");
-        sd_available = false;
+        sd_logging_enabled = false;
       }
     }
 
