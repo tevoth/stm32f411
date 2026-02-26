@@ -19,6 +19,8 @@ project(stm32_baremetal C)
 set(TARGET_NAME    firmware)
 set(LINKER_SCRIPT  ${CMAKE_SOURCE_DIR}/ld/stm32_flash.ld)  # <-- your .ld file
 set(SHARED_SPI1_ADXL_DIR ${CMAKE_SOURCE_DIR}/../shared/spi1_adxl)
+set(SHARED_SPI1_CORE_DIR ${CMAKE_SOURCE_DIR}/../shared/spi1_core)
+set(SHARED_SPI2_SD_DIR ${CMAKE_SOURCE_DIR}/../shared/spi2_sd)
 
 # CPU/ABI flags (pick the right core/FPU for your STM32)
 set(MCPU_FLAGS   
@@ -46,14 +48,17 @@ file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
 
 add_executable(${TARGET_NAME}.elf ${APP_SOURCES})
 target_sources(${TARGET_NAME}.elf PRIVATE
-  ${SHARED_SPI1_ADXL_DIR}/src/spi.c
+  ${SHARED_SPI1_CORE_DIR}/src/spi.c
   ${SHARED_SPI1_ADXL_DIR}/src/adxl345.c
+  ${SHARED_SPI2_SD_DIR}/src/spi2_sd.c
 )
 
 target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${CMAKE_SOURCE_DIR}/inc
   ${CMAKE_SOURCE_DIR}/inc/fatfs
   ${SHARED_SPI1_ADXL_DIR}/inc
+  ${SHARED_SPI1_CORE_DIR}/inc
+  ${SHARED_SPI2_SD_DIR}/inc
   ${CMAKE_SOURCE_DIR}/../CMSIS/Include
   ${CMAKE_SOURCE_DIR}/../CMSIS/Device/ST/STM32F4xx/Include
 )
@@ -74,6 +79,9 @@ target_compile_options(${TARGET_NAME}.elf PRIVATE
 # turn on/off STM32F411xE compile (will fail if off!)
 set(STM32F411xE ON CACHE BOOL "turn on F411xE")
 target_compile_definitions(${TARGET_NAME}.elf PRIVATE
+  SPI1_CFG_CPOL=1
+  SPI1_CFG_CPHA=1
+  SPI1_CFG_MISO_PULLUP=0
   $<$<BOOL:${STM32F411xE}>:STM32F411xE=1>
 )
 
