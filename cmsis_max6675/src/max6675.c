@@ -15,14 +15,16 @@ max6675_status_t max6675_read_status(uint16_t *raw)
 
   // Retry once to filter occasional invalid bus frames.
   for (uint32_t attempt = 0; attempt < 2U; attempt++) {
-    uint16_t frame = 0U;
+    uint8_t rx[2] = {0U, 0U};
     cs_enable();
-    bool ok = spi1_transfer16_checked(0x0000U, &frame);
+    bool ok = spi1_receive(rx, 2U);
     cs_disable();
 
     if (!ok) {
       return MAX6675_STATUS_TIMEOUT;
     }
+
+    uint16_t frame = (uint16_t)(((uint16_t)rx[0] << 8) | rx[1]);
 
     if (!max6675_frame_valid(frame)) {
       continue;
