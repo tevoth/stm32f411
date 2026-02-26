@@ -1,5 +1,4 @@
-#ifndef SD_RAW_LOG_H
-#define SD_RAW_LOG_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -11,5 +10,3 @@
 bool sd_raw_log_init(void);
 bool sd_raw_log_append_line(const char *line);
 bool sd_raw_log_flush_pending(void);
-
-#endif
