@@ -43,6 +43,8 @@ void spi_gpio_init(void) {
   }
   GPIOA->OTYPER &= ~(GPIO_OTYPER_OT5 | GPIO_OTYPER_OT7);
   GPIOA->PUPDR  &= ~(GPIO_PUPDR_PUPD5_Msk | GPIO_PUPDR_PUPD6_Msk | GPIO_PUPDR_PUPD7_Msk);
+  // Bias MISO high so unplugged sensor does not leave the input floating.
+  GPIOA->PUPDR  |= GPIO_PUPDR_PUPD6_0;
 
   // Set PA4 as output pin (chip-select)
   GPIOA->MODER |=  (1U << (4 * 2));
@@ -113,6 +115,42 @@ uint16_t spi1_transfer16(uint16_t tx_data) {
   spi_clear_status();
 
   return rx_data;
+}
+
+bool spi1_transfer16_checked(uint16_t tx_data, uint16_t *rx_data) {
+  if (rx_data == 0U) {
+    return false;
+  }
+
+  // Wait until transmit buffer is empty.
+  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    spi_recover();
+    return false;
+  }
+
+  // 16-bit access is required when DFF=1.
+  *(__IO uint16_t *)&SPI1->DR = tx_data;
+
+  // Wait for the received 16-bit frame.
+  if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
+    spi_recover();
+    return false;
+  }
+  *rx_data = *(__IO uint16_t *)&SPI1->DR;
+
+  // Wait until transfer is fully complete on the wire.
+  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    spi_recover();
+    return false;
+  }
+  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    spi_recover();
+    return false;
+  }
+
+  spi_clear_status();
+
+  return true;
 }
 
 void cs_enable(void) {
