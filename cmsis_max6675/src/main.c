@@ -20,20 +20,29 @@ int main(void) {
   while(1) {
     uint16_t raw = 0;
     led_toggle();
-    if (!max6675_read_raw(&raw)) {
-      printf("MAX6675 read failed\n");
-      systick_msec_delay(250);
-      continue;
-    }
+    max6675_status_t status = max6675_read_status(&raw);
 
-    if (max6675_thermocouple_open(raw)) {
-      printf("MAX6675 fault: thermocouple open (raw=0x%04X)\n", (unsigned)raw);
-    } else {
-      int32_t temp_c_x100 = max6675_temp_c_x100(raw);
-      printf("MAX6675 temp: %" PRId32 ".%02" PRId32 " C (raw=0x%04X)\n",
-        temp_c_x100 / 100,
-        temp_c_x100 % 100,
-        (unsigned)raw);
+    switch (status) {
+      case MAX6675_STATUS_OK: {
+        int32_t temp_c_x100 = max6675_temp_c_x100(raw);
+        printf("MAX6675 temp: %" PRId32 ".%02" PRId32 " C (raw=0x%04X)\n",
+          temp_c_x100 / 100,
+          temp_c_x100 % 100,
+          (unsigned)raw);
+      } break;
+
+      case MAX6675_STATUS_THERMOCOUPLE_OPEN:
+        printf("MAX6675 fault: thermocouple open (raw=0x%04X)\n", (unsigned)raw);
+        break;
+
+      case MAX6675_STATUS_BUS_INVALID:
+        printf("MAX6675 fault: invalid SPI frame (sensor disconnected or bus noise)\n");
+        break;
+
+      case MAX6675_STATUS_TIMEOUT:
+      default:
+        printf("MAX6675 fault: SPI timeout\n");
+        break;
     }
 
     // MAX6675 updates roughly every 220 ms.

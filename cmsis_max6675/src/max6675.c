@@ -7,25 +7,42 @@ static bool max6675_frame_valid(uint16_t raw)
   return (raw & ((1U << 15) | (1U << 1))) == 0U;
 }
 
-bool max6675_read_raw(uint16_t *raw)
+max6675_status_t max6675_read_status(uint16_t *raw)
 {
   if (raw == 0) {
-    return false;
+    return MAX6675_STATUS_TIMEOUT;
   }
 
   // Retry once to filter occasional invalid bus frames.
   for (uint32_t attempt = 0; attempt < 2U; attempt++) {
+    uint16_t frame = 0U;
     cs_enable();
-    uint16_t frame = spi1_transfer16(0x0000U);
+    bool ok = spi1_transfer16_checked(0x0000U, &frame);
     cs_disable();
 
-    if (max6675_frame_valid(frame)) {
-      *raw = frame;
-      return true;
+    if (!ok) {
+      return MAX6675_STATUS_TIMEOUT;
     }
+
+    if (!max6675_frame_valid(frame)) {
+      continue;
+    }
+
+    *raw = frame;
+    if (max6675_thermocouple_open(frame)) {
+      return MAX6675_STATUS_THERMOCOUPLE_OPEN;
+    }
+    return MAX6675_STATUS_OK;
   }
 
-  return false;
+  return MAX6675_STATUS_BUS_INVALID;
+}
+
+bool max6675_read_raw(uint16_t *raw)
+{
+  max6675_status_t status = max6675_read_status(raw);
+  return (status == MAX6675_STATUS_OK) ||
+         (status == MAX6675_STATUS_THERMOCOUPLE_OPEN);
 }
 
 bool max6675_thermocouple_open(uint16_t raw)
