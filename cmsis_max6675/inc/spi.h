@@ -6,7 +6,7 @@
 
 void spi_gpio_init(void);
 void spi1_config(void);
-uint16_t spi1_transfer16(uint16_t tx_data);
-bool spi1_transfer16_checked(uint16_t tx_data, uint16_t *rx_data);
+bool spi1_transmit(uint8_t *data, uint32_t size);
+bool spi1_receive(uint8_t *data, uint32_t size);
 void cs_enable(void);
 void cs_disable(void);

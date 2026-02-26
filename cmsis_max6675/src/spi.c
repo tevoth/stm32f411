@@ -77,7 +77,6 @@ void spi1_config(void) {
   cr1 |= SPI_CR1_MSTR; // master mode
   cr1 |= SPI_CR1_BR_0; // fPCLK/4
   // MAX6675 uses SPI mode 0 (CPOL=0, CPHA=0).
-  cr1 |= SPI_CR1_DFF; // 16-bit frame format
   cr1 |= SPI_CR1_SSI | SPI_CR1_SSM; // software slave management
   SPI1->CR1 = cr1;
 
@@ -85,60 +84,63 @@ void spi1_config(void) {
   SPI1->CR1 |= (SPI_CR1_SPE);
 }
 
-uint16_t spi1_transfer16(uint16_t tx_data) {
-  // Wait until transmit buffer is empty.
+bool spi1_transmit(uint8_t *data, uint32_t size) {
+  if ((data == 0U) && (size > 0U)) {
+    return false;
+  }
+
+  uint32_t i = 0;
+  while (i < size) {
+    // Wait for TX buffer space with timeout guard.
+    if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+      spi_recover();
+      return false;
+    }
+    
+    // data ready, right to data register
+    *(__IO uint8_t *)&SPI1->DR = data[i];
+    i++;
+  }
+  // Wait until TXE is set for the last frame.
   if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
     spi_recover();
-    return 0xFFFFU;
+    return false;
   }
 
-  // 16-bit access is required when DFF=1.
-  *(__IO uint16_t *)&SPI1->DR = tx_data;
-
-  // Wait for the received 16-bit frame.
-  if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
-    spi_recover();
-    return 0xFFFFU;
-  }
-  uint16_t rx_data = *(__IO uint16_t *)&SPI1->DR;
-
-  // Wait until transfer is fully complete on the wire.
-  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
-    spi_recover();
-    return 0xFFFFU;
-  }
+  // Wait until SPI is no longer busy on the wire.
   if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
     spi_recover();
-    return 0xFFFFU;
+    return false;
   }
 
   spi_clear_status();
 
-  return rx_data;
+  return true;
 }
 
-bool spi1_transfer16_checked(uint16_t tx_data, uint16_t *rx_data) {
-  if (rx_data == 0U) {
+bool spi1_receive(uint8_t *data, uint32_t size) {
+  if ((data == 0U) && (size > 0U)) {
     return false;
   }
 
-  // Wait until transmit buffer is empty.
-  if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
-    spi_recover();
-    return false;
+  while (size) {
+    // set dummy data set generate SPI clock
+    if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+      spi_recover();
+      return false;
+    }
+    *(__IO uint8_t *)&SPI1->DR = 0U;
+    // wait for RXNE flag to be set
+    if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
+      spi_recover();
+      return false;
+    }
+    // read data
+    *data++ = *(__IO uint8_t *)&SPI1->DR;
+    size--;
   }
 
-  // 16-bit access is required when DFF=1.
-  *(__IO uint16_t *)&SPI1->DR = tx_data;
-
-  // Wait for the received 16-bit frame.
-  if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
-    spi_recover();
-    return false;
-  }
-  *rx_data = *(__IO uint16_t *)&SPI1->DR;
-
-  // Wait until transfer is fully complete on the wire.
+  // wait until the last frame has fully shifted out before deasserting CS
   if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
     spi_recover();
     return false;
@@ -149,7 +151,6 @@ bool spi1_transfer16_checked(uint16_t tx_data, uint16_t *rx_data) {
   }
 
   spi_clear_status();
-
   return true;
 }
 
