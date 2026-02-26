@@ -5,15 +5,15 @@
 #define SDCARD_BLOCK_SIZE 512U
 
 // Standard SD commands in SPI mode.
-#define CMD0   0U
-#define CMD8   8U
-#define CMD16 16U
-#define CMD17 17U
-#define CMD24 24U
-#define CMD55 55U
-#define CMD58 58U
+#define CMD0   0U   // GO_IDLE_STATE: reset card to idle in SPI mode
+#define CMD8   8U   // SEND_IF_COND: check voltage range and SD v2 support
+#define CMD16 16U   // SET_BLOCKLEN: set block length (used for SDSC cards)
+#define CMD17 17U   // READ_SINGLE_BLOCK: read one 512-byte data block
+#define CMD24 24U   // WRITE_BLOCK: write one 512-byte data block
+#define CMD55 55U   // APP_CMD prefix: next command is application-specific
+#define CMD58 58U   // READ_OCR: read OCR/capacity status bits
 
-#define ACMD41 41U
+#define ACMD41 41U  // SD_SEND_OP_COND: complete card initialization
 
 // Data token for single block write in SPI mode.
 #define TOKEN_SINGLE_BLOCK_WRITE 0xFEU
