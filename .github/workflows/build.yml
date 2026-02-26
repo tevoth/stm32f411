@@ -22,16 +22,21 @@ jobs:
       - name: Configure and Build all projects
         run: |
           set -e
-          for project in \
-            cmsis_blinky \
-            cmsis_button \
-            cmsis_dac \
-            cmsis_max6675 \
-            cmsis_spi \
-            cmsis_sysclk_blinky \
-            cmsis_tim2clk_blinky \
-            cmsis_uart1 \
-            cmsis_uart2; do
+          shopt -s nullglob
+          projects=(cmsis_*/)
+          if [ ${#projects[@]} -eq 0 ]; then
+            echo "No cmsis_* projects found"
+            exit 1
+          fi
+
+          for project_dir in "${projects[@]}"; do
+            project="${project_dir%/}"
+            if [ ! -f "$project/CMakeLists.txt" ]; then
+              echo "Skipping $project: no CMakeLists.txt"
+              continue
+            fi
+
+            echo "Building $project"
             cmake -S "$project" -B "$project/build"
             cmake --build "$project/build"
           done
