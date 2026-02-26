@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "stm32f4xx.h"
 
 void spi_gpio_init(void);
