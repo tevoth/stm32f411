@@ -17,6 +17,21 @@ static bool spi_wait_clear(volatile uint32_t *reg, uint32_t mask) {
   return ((*reg & mask) == 0U);
 }
 
+static void spi_clear_status(void) {
+  (void)SPI1->DR;
+  (void)SPI1->SR;
+}
+
+// Best-effort timeout recovery so a failed transfer does not poison the next one.
+static void spi_recover(void) {
+  if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    // Fallback if SPI remains busy/stuck: pulse SPE while preserving CR1 config.
+    SPI1->CR1 &= ~SPI_CR1_SPE;
+    SPI1->CR1 |= SPI_CR1_SPE;
+  }
+  spi_clear_status();
+}
+
 void spi_gpio_init(void) {
   // enable clock access to GPIOA
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
@@ -71,6 +86,7 @@ void spi1_config(void) {
 uint16_t spi1_transfer16(uint16_t tx_data) {
   // Wait until transmit buffer is empty.
   if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    spi_recover();
     return 0xFFFFU;
   }
 
@@ -79,20 +95,22 @@ uint16_t spi1_transfer16(uint16_t tx_data) {
 
   // Wait for the received 16-bit frame.
   if (!spi_wait_set(&SPI1->SR, SPI_SR_RXNE)) {
+    spi_recover();
     return 0xFFFFU;
   }
   uint16_t rx_data = *(__IO uint16_t *)&SPI1->DR;
 
   // Wait until transfer is fully complete on the wire.
   if (!spi_wait_set(&SPI1->SR, SPI_SR_TXE)) {
+    spi_recover();
     return 0xFFFFU;
   }
   if (!spi_wait_clear(&SPI1->SR, SPI_SR_BSY)) {
+    spi_recover();
     return 0xFFFFU;
   }
 
-  // Final SR read keeps status handling consistent with other paths.
-  (void)SPI1->SR;
+  spi_clear_status();
 
   return rx_data;
 }
