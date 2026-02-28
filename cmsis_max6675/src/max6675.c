@@ -17,7 +17,7 @@ max6675_status_t max6675_read_status(uint16_t *raw)
   // Retry once to filter occasional invalid bus frames.
   for (uint32_t attempt = 0; attempt < 2U; attempt++) {
     uint8_t rx[2] = {0U, 0U};
-    bool ok = spi_cs_transmit(cs_enable, cs_disable, spi1_receive, rx, 2U);
+    bool ok = spi_cs_receive(cs_enable, cs_disable, spi1_receive, rx, 2U);
 
     if (!ok) {
       return MAX6675_STATUS_TIMEOUT;
