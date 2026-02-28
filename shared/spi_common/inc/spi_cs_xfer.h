@@ -7,6 +7,9 @@ typedef bool (*spi_xfer_tx_fn_t)(uint8_t *data, uint32_t size);
 typedef bool (*spi_xfer_rx_fn_t)(uint8_t *data, uint32_t size);
 typedef void (*spi_xfer_cs_fn_t)(void);
 
+// CS callbacks are passed in so the same helper can be reused across multiple
+// devices on one SPI bus (shared SCK/MISO/MOSI, different GPIO chip-selects).
+
 // Run a chip-select scoped transmit operation.
 static inline bool spi_cs_transmit(spi_xfer_cs_fn_t cs_enable_fn,
                                    spi_xfer_cs_fn_t cs_disable_fn,
