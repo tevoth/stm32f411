@@ -9,7 +9,9 @@
 #include "system_init.h"
 
 int main(void) {
-  system_init();
+  if (!system_init()) {
+    while (1) {}
+  }
   led_init();
   uart_init();
   adc_init();

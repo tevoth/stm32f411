@@ -14,7 +14,9 @@ uint8_t data_buffer[6];
 
 int main(void) {
 
-  system_init();
+  if (!system_init()) {
+    while (1) {}
+  }
   led_init();
   uart_init();
   if (!adxl_init()) {

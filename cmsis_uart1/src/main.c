@@ -7,7 +7,9 @@
 #include "systick_msec_delay.h"
 
 int main(void) {
-  system_init();
+  if (!system_init()) {
+    while (1) {}
+  }
   led_init();
   uart_init();
   while(1) {
