@@ -50,9 +50,10 @@ void spi_gpio_init(void) {
   GPIOA->PUPDR |= GPIO_PUPDR_PUPD6_0;
 #endif
 
-  // Set PA4 as output pin (chip-select)
-  GPIOA->MODER |= (1U << (4 * 2));
-  GPIOA->MODER &= ~(2U << (4 * 2));
+  // Set PA4 as output pin (chip-select): clear field first to avoid a
+  // transient analog-mode glitch if the pin was previously in AF mode.
+  GPIOA->MODER &= ~(3U << (4 * 2));
+  GPIOA->MODER |=  (1U << (4 * 2));
   GPIOA->OTYPER &= ~(GPIO_OTYPER_OT4);
   GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPD4_Msk);
 
@@ -109,6 +110,13 @@ bool spi1_transmit(uint8_t *data, uint32_t size) {
     // data ready, write to data register
     *(__IO uint8_t *)&SPI1->DR = data[i];
     i++;
+
+    // Drain the received byte so the RX FIFO never overflows (OVR).
+    if (!spi_wait_set_limit(&SPI1->SR, SPI_SR_RXNE, SPI_WAIT_LIMIT)) {
+      spi_recover();
+      return false;
+    }
+    (void)*(__IO uint8_t *)&SPI1->DR;
   }
   // Wait until TXE is set for the last frame.
   if (!spi_wait_set_limit(&SPI1->SR, SPI_SR_TXE, SPI_WAIT_LIMIT)) {
