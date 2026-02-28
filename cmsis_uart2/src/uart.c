@@ -68,10 +68,6 @@ static bool uart_write(int ch) {
   return true;
 }
 
-static uint16_t compute_uart_bd(uint32_t periph_clk, uint32_t baudrate) {
-  return uart_compute_bd(periph_clk, baudrate);
-}
-
 static void uart_set_baudrate(uint32_t periph_clk, uint32_t baudrate) {
-  USART2->BRR = compute_uart_bd(periph_clk, baudrate);
+  USART2->BRR = uart_compute_bd(periph_clk, baudrate);
 }
