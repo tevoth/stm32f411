@@ -42,7 +42,7 @@ void spi_gpio_init(void) {
     GPIOA->MODER &= ~(1U << (pin * 2));
     GPIOA->MODER |= (2U << (pin * 2));
   }
-  GPIOA->OTYPER &= ~(GPIO_OTYPER_OT5 | GPIO_OTYPER_OT7);
+  GPIOA->OTYPER &= ~(GPIO_OTYPER_OT5 | GPIO_OTYPER_OT6 | GPIO_OTYPER_OT7);
   GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPD5_Msk | GPIO_PUPDR_PUPD6_Msk | GPIO_PUPDR_PUPD7_Msk);
 
 #if SPI1_CFG_MISO_PULLUP

@@ -20,6 +20,7 @@ set(TARGET_NAME    firmware)
 set(LINKER_SCRIPT  ${CMAKE_SOURCE_DIR}/ld/stm32_flash.ld)  # <-- your .ld file
 set(SHARED_SPI1_CORE_DIR ${CMAKE_SOURCE_DIR}/../shared/spi1_core)
 set(SHARED_SPI_COMMON_DIR ${CMAKE_SOURCE_DIR}/../shared/spi_common)
+set(SHARED_UART_COMMON_DIR ${CMAKE_SOURCE_DIR}/../shared/uart_common)
 
 # CPU/ABI flags (pick the right core/FPU for your STM32)
 set(MCPU_FLAGS   
@@ -54,6 +55,7 @@ target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${CMAKE_SOURCE_DIR}/inc
   ${SHARED_SPI1_CORE_DIR}/inc
   ${SHARED_SPI_COMMON_DIR}/inc
+  ${SHARED_UART_COMMON_DIR}/inc
   ${CMAKE_SOURCE_DIR}/../CMSIS/Include
   ${CMAKE_SOURCE_DIR}/../CMSIS/Device/ST/STM32F4xx/Include
 )
