@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "stm32f4xx.h"
 #include "uart.h"
+#include "uart_helpers.h"
 
 #define UART_BAUDRATE 115200
 #define SYS_FREQ      16000000
@@ -10,14 +11,6 @@
 
 static void uart_set_baudrate(uint32_t periph_clk, uint32_t baudrate);
 static bool uart_write(int ch);
-static bool uart_wait_set(volatile uint32_t *reg, uint32_t mask);
-
-// Wait until status bits are set; false indicates timeout.
-static bool uart_wait_set(volatile uint32_t *reg, uint32_t mask) {
-  uint32_t timeout = UART_WAIT_LIMIT;
-  while (((*reg & mask) == 0U) && (timeout-- > 0U)) {}
-  return ((*reg & mask) != 0U);
-}
 
 int __io_putchar(int ch) {
   return uart_write(ch) ? ch : -1;
@@ -67,7 +60,7 @@ void uart_init(void) {
 }
 
 static bool uart_write(int ch) {
-  if (!uart_wait_set(&USART1->SR, USART_SR_TXE)) {
+  if (!uart_wait_set_limit(&USART1->SR, USART_SR_TXE, UART_WAIT_LIMIT)) {
     return false;
   }
 
@@ -76,8 +69,7 @@ static bool uart_write(int ch) {
 }
 
 static uint16_t compute_uart_bd(uint32_t periph_clk, uint32_t baudrate) {
-  uint16_t bd = ((periph_clk + (baudrate/2U))/baudrate);  
-  return bd;
+  return uart_compute_bd(periph_clk, baudrate);
 }
 
 static void uart_set_baudrate(uint32_t periph_clk, uint32_t baudrate) {

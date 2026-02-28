@@ -18,6 +18,7 @@ project(stm32_baremetal C)
 # --- Target config (EDIT THESE) ---
 set(TARGET_NAME    firmware)
 set(LINKER_SCRIPT  ${CMAKE_SOURCE_DIR}/ld/stm32_flash.ld)  # <-- your .ld file
+set(SHARED_UART_COMMON_DIR ${CMAKE_SOURCE_DIR}/../shared/uart_common)
 
 # CPU/ABI flags (pick the right core/FPU for your STM32)
 set(MCPU_FLAGS   
@@ -47,6 +48,7 @@ add_executable(${TARGET_NAME}.elf ${APP_SOURCES})
 
 target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${CMAKE_SOURCE_DIR}/inc
+  ${SHARED_UART_COMMON_DIR}/inc
   ${CMAKE_SOURCE_DIR}/../CMSIS/Include
   ${CMAKE_SOURCE_DIR}/../CMSIS/Device/ST/STM32F4xx/Include
 )
@@ -101,4 +103,3 @@ add_custom_target(disasm
   DEPENDS ${TARGET_NAME}.elf
   COMMENT "Generating disassembly listing"
 )
-
