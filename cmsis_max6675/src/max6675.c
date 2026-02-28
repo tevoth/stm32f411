@@ -1,5 +1,6 @@
 #include "max6675.h"
 #include "spi.h"
+#include "spi_cs_xfer.h"
 
 static bool max6675_frame_valid(uint16_t raw)
 {
@@ -16,9 +17,7 @@ max6675_status_t max6675_read_status(uint16_t *raw)
   // Retry once to filter occasional invalid bus frames.
   for (uint32_t attempt = 0; attempt < 2U; attempt++) {
     uint8_t rx[2] = {0U, 0U};
-    cs_enable();
-    bool ok = spi1_receive(rx, 2U);
-    cs_disable();
+    bool ok = spi_cs_receive(cs_enable, cs_disable, spi1_receive, rx, 2U);
 
     if (!ok) {
       return MAX6675_STATUS_TIMEOUT;

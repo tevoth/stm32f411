@@ -1,4 +1,5 @@
 #include "adxl345.h"
+#include "spi_cs_xfer.h"
 #include <stdio.h>
 
 bool adxl_read(uint8_t address, uint8_t * rxdata)
@@ -14,23 +15,8 @@ bool adxl_read(uint8_t address, uint8_t * rxdata)
   address |= ADXL345_MULTI_BYTE_ENABLE;
 
   /*Pull cs line low to enable slave*/
-  cs_enable();
-
-  /*Send address*/
-  if (!spi1_transmit(&address, 1)) {
-    cs_disable();
-    return false;
-  }
-
-  /*Read 6 bytes */
-  if (!spi1_receive(rxdata, 6)) {
-    cs_disable();
-    return false;
-  }
-
-  /*Pull cs line high to disable slave*/
-  cs_disable();
-  return true;
+  return spi_cs_transmit_receive(cs_enable, cs_disable, spi1_transmit, spi1_receive,
+                                 &address, 1, rxdata, 6);
 }
 
 bool adxl_read_reg(uint8_t address, uint8_t *value)
@@ -41,14 +27,8 @@ bool adxl_read_reg(uint8_t address, uint8_t *value)
 
   uint8_t read_cmd = address | ADXL345_READ_OPERATION;
 
-  cs_enable();
-  if (!spi1_transmit(&read_cmd, 1) || !spi1_receive(value, 1)) {
-    cs_disable();
-    return false;
-  }
-  cs_disable();
-
-  return true;
+  return spi_cs_transmit_receive(cs_enable, cs_disable, spi1_transmit, spi1_receive,
+                                 &read_cmd, 1, value, 1);
 }
 
 bool adxl_device_present(bool *present)
@@ -75,15 +55,8 @@ bool adxl_write(uint8_t address, uint8_t value)
   // Place data into buffer
   data[1] = value;
 
-  // Pull cs line low to enable slave
-  cs_enable();
-
   // Transmit data and address
-  bool ok = spi1_transmit(data, 2);
-
-  // Pull cs line high to disable slave
-  cs_disable();
-  return ok;
+  return spi_cs_transmit(cs_enable, cs_disable, spi1_transmit, data, 2);
 }
 
 bool adxl_init(void)
