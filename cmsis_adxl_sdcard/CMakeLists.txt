@@ -22,6 +22,7 @@ set(SHARED_SPI1_ADXL_DIR ${CMAKE_SOURCE_DIR}/../shared/spi1_adxl)
 set(SHARED_SPI1_CORE_DIR ${CMAKE_SOURCE_DIR}/../shared/spi1_core)
 set(SHARED_SPI2_SD_DIR ${CMAKE_SOURCE_DIR}/../shared/spi2_sd)
 set(SHARED_SPI_COMMON_DIR ${CMAKE_SOURCE_DIR}/../shared/spi_common)
+set(SHARED_UART_COMMON_DIR ${CMAKE_SOURCE_DIR}/../shared/uart_common)
 
 # CPU/ABI flags (pick the right core/FPU for your STM32)
 set(MCPU_FLAGS   
@@ -60,6 +61,7 @@ target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${SHARED_SPI1_CORE_DIR}/inc
   ${SHARED_SPI2_SD_DIR}/inc
   ${SHARED_SPI_COMMON_DIR}/inc
+  ${SHARED_UART_COMMON_DIR}/inc
   ${CMAKE_SOURCE_DIR}/../CMSIS/Include
   ${CMAKE_SOURCE_DIR}/../CMSIS/Device/ST/STM32F4xx/Include
 )

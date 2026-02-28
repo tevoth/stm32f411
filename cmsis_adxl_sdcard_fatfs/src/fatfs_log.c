@@ -31,10 +31,12 @@ bool fatfs_log_init(void) {
 
     fr = f_write(&file, header, expected, &bw);
     if ((fr != FR_OK) || (bw != expected)) {
+      f_close(&file);
       return false;
     }
 
     if (f_sync(&file) != FR_OK) {
+      f_close(&file);
       return false;
     }
   }
