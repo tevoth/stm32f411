@@ -154,3 +154,35 @@ Fixed `sdcard_spi_init()` failing in `cmsis_max6675_sdcard` with `R1=0x01` durin
 - `cmake -S cmsis_uart1 -B cmsis_uart1/build && cmake --build cmsis_uart1/build`
 - `cmake -S cmsis_dac -B cmsis_dac/build && cmake --build cmsis_dac/build`
 - `cmake -S cmsis_blinky -B cmsis_blinky/build && cmake --build cmsis_blinky/build`
+
+---
+
+# Session Summary — New project `cmsis_max6675_sdcard_fatfs`
+
+## What we did
+
+Created `cmsis_max6675_sdcard_fatfs` by taking `cmsis_max6675_sdcard` and adding FatFs integration using the same structure as `cmsis_adxl_sdcard_fatfs`.
+
+---
+
+## PR — `feat/max6675-sdcard-fatfs`
+
+### Added project
+
+- New project directory `cmsis_max6675_sdcard_fatfs/` with:
+  - MAX6675 driver/app files (`src/main.c`, `src/max6675.c`, `inc/max6675.h`)
+  - FatFs core and disk I/O port (`src/fatfs/ff.c`, `src/fatfs/diskio_port.c`, `inc/fatfs/*`)
+  - FatFs logger module (`src/fatfs_log.c`, `inc/fatfs_log.h`)
+  - Project `CMakeLists.txt`
+  - Project `README.md`
+
+### Functional behavior
+
+- Firmware reads MAX6675 over SPI1, prints status/temperature to UART, and appends CSV lines to a FAT32 file on microSD via SPI2.
+- CSV file path uses 8.3 name (`0:max6675.csv`) to match current FatFs config (`FF_USE_LFN=0`).
+- CSV header: `sample,status,temp_c_x100,raw_hex`.
+
+### Validation
+
+- `cmake -S cmsis_max6675_sdcard_fatfs -B cmsis_max6675_sdcard_fatfs/build`
+- `cmake --build cmsis_max6675_sdcard_fatfs/build`
