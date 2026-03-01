@@ -17,18 +17,23 @@ project(stm32_baremetal C)
 
 # --- Target config (EDIT THESE) ---
 set(TARGET_NAME    firmware)
-set(LINKER_SCRIPT  ${CMAKE_SOURCE_DIR}/ld/stm32_flash.ld)  # <-- your .ld file
-set(SHARED_SPI1_CORE_DIR ${CMAKE_SOURCE_DIR}/../shared/spi1_core)
-set(SHARED_SPI_COMMON_DIR ${CMAKE_SOURCE_DIR}/../shared/spi_common)
-set(SHARED_UART_COMMON_DIR ${CMAKE_SOURCE_DIR}/../shared/uart_common)
+set(SHARED_LED_DIR          ${CMAKE_SOURCE_DIR}/../shared/led)
+set(SHARED_SYSTEM_INIT_DIR  ${CMAKE_SOURCE_DIR}/../shared/system_init)
+set(SHARED_SYSTICK_DIR      ${CMAKE_SOURCE_DIR}/../shared/systick)
+set(SHARED_STARTUP_DIR      ${CMAKE_SOURCE_DIR}/../shared/startup)
+set(SHARED_LD_DIR           ${CMAKE_SOURCE_DIR}/../shared/ld)
+set(SHARED_UART_COMMON_DIR  ${CMAKE_SOURCE_DIR}/../shared/uart_common)
+set(SHARED_SPI1_CORE_DIR    ${CMAKE_SOURCE_DIR}/../shared/spi1_core)
+set(SHARED_SPI_COMMON_DIR   ${CMAKE_SOURCE_DIR}/../shared/spi_common)
+set(LINKER_SCRIPT  ${SHARED_LD_DIR}/stm32_flash.ld)
 
 # CPU/ABI flags (pick the right core/FPU for your STM32)
-set(MCPU_FLAGS   
+set(MCPU_FLAGS
   -mcpu=cortex-m4
 )
-set(MFLOAT_FLAGS 
-  -mthumb 
-  -mfloat-abi=hard 
+set(MFLOAT_FLAGS
+  -mthumb
+  -mfloat-abi=hard
   -mfpu=fpv4-sp-d16
 )  # remove/adjust for no-FPU parts
 
@@ -39,23 +44,28 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # --- Sources ---
-# Expect:
-#   - src/startup.c defines vector table + Reset_Handler (or your entry)
-#   - src/*.c contains the rest of your firmware (including main.c)
 file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_SOURCE_DIR}/src/*.c
 )
 
 add_executable(${TARGET_NAME}.elf ${APP_SOURCES})
 target_sources(${TARGET_NAME}.elf PRIVATE
+  ${SHARED_LED_DIR}/src/led.c
+  ${SHARED_SYSTEM_INIT_DIR}/src/system_init.c
+  ${SHARED_SYSTICK_DIR}/src/systick_msec_delay.c
+  ${SHARED_STARTUP_DIR}/src/stm32f4x_startup.c
+  ${SHARED_UART_COMMON_DIR}/src/uart.c
   ${SHARED_SPI1_CORE_DIR}/src/spi.c
 )
 
 target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${CMAKE_SOURCE_DIR}/inc
+  ${SHARED_LED_DIR}/inc
+  ${SHARED_SYSTEM_INIT_DIR}/inc
+  ${SHARED_SYSTICK_DIR}/inc
+  ${SHARED_UART_COMMON_DIR}/inc
   ${SHARED_SPI1_CORE_DIR}/inc
   ${SHARED_SPI_COMMON_DIR}/inc
-  ${SHARED_UART_COMMON_DIR}/inc
   ${CMAKE_SOURCE_DIR}/../CMSIS/Include
   ${CMAKE_SOURCE_DIR}/../CMSIS/Device/ST/STM32F4xx/Include
 )
@@ -82,9 +92,7 @@ target_compile_definitions(${TARGET_NAME}.elf PRIVATE
   $<$<BOOL:${STM32F411xE}>:STM32F411xE=1>
 )
 
-# --- Link options (use your linker script; no external libs assumed) ---
-# -nostdlib/-nostartfiles means:
-#   you provide Reset_Handler + vector table + data/bss init + call main().
+# --- Link options ---
 target_link_options(${TARGET_NAME}.elf PRIVATE
   ${MCPU_FLAGS}
   ${MFLOAT_FLAGS}
