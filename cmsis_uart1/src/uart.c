@@ -1,12 +1,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "stm32f4xx.h"
+#include "system_clock.h"
 #include "uart.h"
 #include "uart_helpers.h"
 
 #define UART_BAUDRATE 115200
-#define SYS_FREQ      16000000
-#define APB2_CLK      SYS_FREQ
 #define UART_WAIT_LIMIT 100000U
 
 static void uart_set_baudrate(uint32_t periph_clk, uint32_t baudrate);
@@ -54,7 +53,7 @@ void uart_init(void) {
   RCC->APB2RSTR |= RCC_APB2RSTR_USART1RST;
   RCC->APB2RSTR &= ~RCC_APB2RSTR_USART1RST;
 
-  uart_set_baudrate(APB2_CLK, UART_BAUDRATE);
+  uart_set_baudrate(SYSTEM_PCLK2_HZ, UART_BAUDRATE);
 
   USART1->CR1 = USART_CR1_TE | USART_CR1_UE;
 }
