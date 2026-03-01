@@ -122,7 +122,7 @@ Fixed `sdcard_spi_init()` failing in `cmsis_max6675_sdcard` with `R1=0x01` durin
 
 ---
 
-## PR — `fix/sdcard-acmd41-and-clock-constants`
+## PR #98 — `fix/sdcard-acmd41-and-clock-constants`
 
 ### Functional fix
 
