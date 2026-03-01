@@ -111,3 +111,46 @@ Completed the uart helper sweep + one more SPI GPIO fix:
 - Always test-build all affected sub-projects before pushing a PR branch.
 - Do not add `Co-Authored-By` lines to commits.
 - PR format: `## Summary`, `## Why`, `## Files changed`, `## Validation`.
+
+---
+
+# Session Summary — SD init fix + clock constant centralization
+
+## What we did
+
+Fixed `sdcard_spi_init()` failing in `cmsis_max6675_sdcard` with `R1=0x01` during ACMD41, then centralized clock-frequency constants so shared and app-local modules no longer duplicate `16000000`.
+
+---
+
+## PR #98 — `fix/sdcard-acmd41-and-clock-constants`
+
+### Functional fix
+
+1. **SD card init stuck in IDLE** (`shared/sdcard_spi/src/sdcard_spi.c`)
+   - Root cause: `ACMD41` was sent with `arg=0x00000000` even after successful `CMD8`.
+   - Fix: send `ACMD41` with HCS set (`0x40000000`) for SD v2 cards.
+
+### Clock constant centralization
+
+2. **Single source of truth for clock frequencies**
+   - Added `shared/system_init/inc/system_clock.h`:
+     - `SYSTEM_SYSCLK_HZ`
+     - `SYSTEM_HCLK_HZ`
+     - `SYSTEM_PCLK1_HZ`
+     - `SYSTEM_PCLK2_HZ`
+   - Updated shared modules to use it:
+     - `shared/sdcard_spi/src/sdcard_spi.c`
+     - `shared/systick/src/systick_msec_delay.c`
+     - `shared/uart_common/src/uart.c`
+   - Updated remaining app-local hardcoded sites:
+     - `cmsis_uart1/src/uart.c` (APB2 baud clock)
+     - `cmsis_dac/src/uart.c` (APB2 baud clock)
+     - `cmsis_blinky/src/systick_msec_delay.c` (SysTick reload)
+     - `cmsis_blinky/CMakeLists.txt` (add include path for `system_clock.h`)
+
+### Validation
+
+- `cmake --build cmsis_max6675_sdcard/build`
+- `cmake -S cmsis_uart1 -B cmsis_uart1/build && cmake --build cmsis_uart1/build`
+- `cmake -S cmsis_dac -B cmsis_dac/build && cmake --build cmsis_dac/build`
+- `cmake -S cmsis_blinky -B cmsis_blinky/build && cmake --build cmsis_blinky/build`

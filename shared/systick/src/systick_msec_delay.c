@@ -1,11 +1,11 @@
 #include <stdint.h>
 #include "stm32f4xx.h"
+#include "system_clock.h"
 
 #define CTRL_COUNTFLAG (1U << 16)
-#define SYSTICK_INPUT_HZ 16000000U
 
 void systick_msec_delay(uint32_t delay_ms) {
-  const uint32_t reload = (SYSTICK_INPUT_HZ / 1000U) - 1U;
+  const uint32_t reload = (SYSTEM_HCLK_HZ / 1000U) - 1U;
 
   SysTick->CTRL = 0;
   SysTick->VAL = 0;

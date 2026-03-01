@@ -1,5 +1,6 @@
 #include "sdcard_spi.h"
 
+#include "system_clock.h"
 #include "spi2_sd.h"
 
 #define SDCARD_BLOCK_SIZE 512U
@@ -15,6 +16,7 @@
 #define CMD58 58U   // READ_OCR: read OCR/capacity status bits
 
 #define ACMD41 41U  // SD_SEND_OP_COND: complete card initialization
+#define ACMD41_ARG_HCS 0x40000000U // Host supports SDHC/SDXC block addressing
 
 // Data token for single block write in SPI mode.
 #define TOKEN_SINGLE_BLOCK_WRITE 0xFEU
@@ -235,16 +237,45 @@ bool sdcard_spi_init(void) {
     return false;
   }
 
-  // Repeatedly issue ACMD41 until card leaves idle state.
-  for (uint32_t tries = 0; tries < 2000U; tries++) {
-    if (!sd_send_acmd(ACMD41, 0x40000000U, &r1)) {
+  // Repeatedly issue ACMD41 until the card leaves idle state.
+  // Use a SysTick-based 2000 ms wall-clock timeout so the retry count is
+  // independent of the SPI clock speed and NCR wait bytes, which both vary.
+  // Deassert CS between retries: many cards need the rising CS edge to reset
+  // their command-state machine before accepting the next CMD55+ACMD41 pair.
+#define ACMD41_TIMEOUT_MS  2000U
+#define ACMD41_TIMEOUT_CYC (ACMD41_TIMEOUT_MS * (SYSTEM_SYSCLK_HZ / 1000U))
+
+  // Use the DWT cycle counter for a wall-clock timeout.
+  // CYCCNT is never reset — we only capture a start value and compare the
+  // delta — so a caller's ongoing CYCCNT usage is not disturbed.
+  // SysTick is not touched at all.
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  bool dwt_was_enabled = ((DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk) != 0U);
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+  uint32_t t0 = DWT->CYCCNT;
+
+  while ((DWT->CYCCNT - t0) < ACMD41_TIMEOUT_CYC) {
+    spi2_sd_cs_high();
+    if (!spi_txrx(0xFFU, &rx)) {
       spi2_sd_cs_high();
-      return false;
+      break;
+    }
+    spi2_sd_cs_low();
+
+    // After CMD8 success (SD v2), set HCS so cards can exit IDLE correctly.
+    if (!sd_send_acmd(ACMD41, ACMD41_ARG_HCS, &r1)) {
+      spi2_sd_cs_high();
+      break;
     }
     if (r1 == 0x00U) {
       break;
     }
   }
+
+  if (!dwt_was_enabled) {
+    DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
+  }
+
   if (r1 != 0x00U) {
     spi2_sd_cs_high();
     return false;
