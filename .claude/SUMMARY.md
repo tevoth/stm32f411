@@ -165,7 +165,7 @@ Created `cmsis_max6675_sdcard_fatfs` by taking `cmsis_max6675_sdcard` and adding
 
 ---
 
-## PR — `feat/max6675-sdcard-fatfs`
+## PR #99 — `feat/max6675-sdcard-fatfs`
 
 ### Added project
 
