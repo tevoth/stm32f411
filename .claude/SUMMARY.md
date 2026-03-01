@@ -1,3 +1,31 @@
+# Session Summary — cmsis_max6675_sdcard New Project
+
+## What we did
+
+Created `cmsis_max6675_sdcard/` — a new bare-metal sub-project that reads temperature from a MAX6675 K-type thermocouple sensor over SPI1 and logs it to a raw microSD card over SPI2.
+
+---
+
+## PR #96 — `feat/max6675-sdcard`
+
+New project based on `cmsis_adxl_sdcard`, with the ADXL345 driver replaced by the MAX6675 driver from `cmsis_max6675`.
+
+### What changed vs `cmsis_adxl_sdcard`
+
+| Area | Change |
+|---|---|
+| SPI1 mode | CPOL=0 / CPHA=0 / MISO\_PULLUP=1 (MAX6675 mode 0, vs ADXL mode 3) |
+| Sensor driver | `max6675.c/.h` (copied from cmsis\_max6675); `adxl345` + `spi1_adxl` library removed |
+| `CMakeLists.txt` | `spi1_adxl` source/include dropped; SPI1 defines updated |
+| `main.c` | Reads temp every 250 ms; logs all four status cases (OK, open, bus\_invalid, timeout) to UART + SD; flushes every 16 samples |
+| `uart.c` | Uses `uart_wait_set_limit()` from shared `uart_helpers.h` (matches PR #93 pattern; adxl\_sdcard still has the older local helper) |
+| `adc.c` | Not included (was unused in adxl\_sdcard too) |
+
+### Validation
+Built clean with `-Werror`. Flash: 13 128 B, SRAM: 672 B.
+
+---
+
 # Session Summary — Code Review & Bug Fix Sweep
 
 ## What we did
