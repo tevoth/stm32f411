@@ -43,6 +43,7 @@ cmake --build /tmp/build_cmsis_adxl_sdcard_fatfs
 ## Runtime Behavior
 
 - On success, firmware mounts `0:` and appends lines to `adxl_log.csv`.
+- CSV columns are `time_ms,ax_mg,ay_mg,az_mg`.
 - UART continues printing each sample in real time.
 - File logging is implemented in the shared module at `shared/fatfs_log_common/src/fatfs_log.c`.
 - App code uses a handle-based logger API (`fatfs_fopen`, `fatfs_fprintf`) for file-like writes.
