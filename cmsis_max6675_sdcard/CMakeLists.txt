@@ -27,6 +27,7 @@ set(SHARED_SPI1_CORE_DIR      ${CMAKE_SOURCE_DIR}/../shared/spi1_core)
 set(SHARED_SPI2_SD_DIR        ${CMAKE_SOURCE_DIR}/../shared/spi2_sd)
 set(SHARED_SDCARD_SPI_DIR     ${CMAKE_SOURCE_DIR}/../shared/sdcard_spi)
 set(SHARED_SDCARD_RAW_LOG_DIR ${CMAKE_SOURCE_DIR}/../shared/sdcard_raw_log)
+set(SHARED_MAX6675_DIR        ${CMAKE_SOURCE_DIR}/../shared/max6675)
 set(SHARED_SPI_COMMON_DIR     ${CMAKE_SOURCE_DIR}/../shared/spi_common)
 set(LINKER_SCRIPT  ${SHARED_LD_DIR}/stm32_flash.ld)
 
@@ -59,6 +60,7 @@ target_sources(${TARGET_NAME}.elf PRIVATE
   ${SHARED_STARTUP_DIR}/src/stm32f4x_startup.c
   ${SHARED_UART_COMMON_DIR}/src/uart.c
   ${SHARED_SPI1_CORE_DIR}/src/spi.c
+  ${SHARED_MAX6675_DIR}/src/max6675.c
   ${SHARED_SPI2_SD_DIR}/src/spi2_sd.c
   ${SHARED_SDCARD_SPI_DIR}/src/sdcard_spi.c
   ${SHARED_SDCARD_RAW_LOG_DIR}/src/sd_raw_log.c
@@ -71,6 +73,7 @@ target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${SHARED_SYSTICK_DIR}/inc
   ${SHARED_UART_COMMON_DIR}/inc
   ${SHARED_SPI1_CORE_DIR}/inc
+  ${SHARED_MAX6675_DIR}/inc
   ${SHARED_SPI2_SD_DIR}/inc
   ${SHARED_SDCARD_SPI_DIR}/inc
   ${SHARED_SDCARD_RAW_LOG_DIR}/inc

@@ -24,6 +24,7 @@ set(SHARED_STARTUP_DIR      ${CMAKE_SOURCE_DIR}/../shared/startup)
 set(SHARED_LD_DIR           ${CMAKE_SOURCE_DIR}/../shared/ld)
 set(SHARED_UART_COMMON_DIR  ${CMAKE_SOURCE_DIR}/../shared/uart_common)
 set(SHARED_SPI1_ADXL_DIR    ${CMAKE_SOURCE_DIR}/../shared/spi1_adxl)
+set(SHARED_ADC_DIR          ${CMAKE_SOURCE_DIR}/../shared/adc)
 set(SHARED_SPI1_CORE_DIR    ${CMAKE_SOURCE_DIR}/../shared/spi1_core)
 set(SHARED_SPI2_SD_DIR      ${CMAKE_SOURCE_DIR}/../shared/spi2_sd)
 set(SHARED_SDCARD_SPI_DIR   ${CMAKE_SOURCE_DIR}/../shared/sdcard_spi)
@@ -60,6 +61,7 @@ target_sources(${TARGET_NAME}.elf PRIVATE
   ${SHARED_UART_COMMON_DIR}/src/uart.c
   ${SHARED_SPI1_CORE_DIR}/src/spi.c
   ${SHARED_SPI1_ADXL_DIR}/src/adxl345.c
+  ${SHARED_ADC_DIR}/src/adc.c
   ${SHARED_SPI2_SD_DIR}/src/spi2_sd.c
   ${SHARED_SDCARD_SPI_DIR}/src/sdcard_spi.c
 )
@@ -72,6 +74,7 @@ target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${SHARED_SYSTICK_DIR}/inc
   ${SHARED_UART_COMMON_DIR}/inc
   ${SHARED_SPI1_ADXL_DIR}/inc
+  ${SHARED_ADC_DIR}/inc
   ${SHARED_SPI1_CORE_DIR}/inc
   ${SHARED_SPI2_SD_DIR}/inc
   ${SHARED_SDCARD_SPI_DIR}/inc
