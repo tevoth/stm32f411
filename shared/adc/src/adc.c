@@ -1,5 +1,6 @@
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+
 #include "stm32f4xx.h"
 
 #define ADC_WAIT_LIMIT 100000U
@@ -20,14 +21,14 @@ void adc_init(void) {
   GPIOA->MODER |= GPIO_MODER_MODER1_0;
   GPIOA->MODER |= GPIO_MODER_MODER1_1;
   GPIOA->PUPDR &= ~GPIO_PUPDR_PUPD1_Msk;
-  
+
   // enable clock access to ADC unit
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
   RCC->APB2RSTR |= RCC_APB2RSTR_ADCRST;
   RCC->APB2RSTR &= ~RCC_APB2RSTR_ADCRST;
 
   // Select ADC channel PA1
-  ADC1->SQR3 &= ~(ADC_SQR3_SQ1_Msk); 
+  ADC1->SQR3 &= ~(ADC_SQR3_SQ1_Msk);
   ADC1->SQR3 |= ADC_SQR3_SQ1_0;
 
   // Set conversion sequence length
@@ -39,7 +40,6 @@ void adc_init(void) {
 
   // Enable ADC from a known CR2 baseline.
   ADC1->CR2 = ADC_CR2_ADON;
-
 }
 
 void adc_start(void) {
@@ -52,6 +52,5 @@ uint32_t adc_read(void) {
     // Preserve forward progress instead of deadlocking on missing EOC.
     return UINT32_MAX;
   }
-  uint32_t value = ADC1->DR;
-  return value;
+  return ADC1->DR;
 }
