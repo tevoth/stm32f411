@@ -35,7 +35,8 @@ int main(void) {
     }
   }
 
-  bool sd_logging_enabled = fatfs_log_init();
+  fatfs_log_file_t log_file = {0};
+  bool sd_logging_enabled = fatfs_fopen(&log_file, 0);
   if (!sd_logging_enabled) {
     while (1) {
       printf("FatFs logger init failed\n");
@@ -75,7 +76,7 @@ int main(void) {
         sample_index, ax_mg, ay_mg, az_mg);
 
       if (sd_logging_enabled) {
-        if (!fatfs_log_append_line(line)) {
+        if (!fatfs_fprintf(&log_file, line)) {
           printf("FatFs write failed; disabling SD logging\n");
           sd_logging_enabled = false;
         }
