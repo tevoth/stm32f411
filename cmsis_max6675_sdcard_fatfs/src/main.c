@@ -28,7 +28,8 @@ int main(void) {
   printf("\n=== MAX6675 + FAT32 microSD logger demo ===\n");
   printf("SPI1: MAX6675, USART2: console, SPI2: microSD(FAT32)\n");
 
-  bool sd_logging_enabled = fatfs_log_init();
+  fatfs_log_file_t log_file = {0};
+  bool sd_logging_enabled = fatfs_fopen(&log_file, 0);
   if (sd_logging_enabled) {
     printf("microSD FAT32 log init OK\n");
   } else {
@@ -90,7 +91,7 @@ int main(void) {
 
       // Also append to SD log when card is available.
       if (sd_logging_enabled) {
-        if ((csv_n <= 0) || !fatfs_log_append_line(csv_line)) {
+        if ((csv_n <= 0) || !fatfs_fprintf(&log_file, csv_line)) {
           printf("microSD FAT32 append failed; disabling SD logging\n");
           sd_logging_enabled = false;
         }

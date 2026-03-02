@@ -31,7 +31,7 @@ The key software delta is layering:
 \section{Application Flow with FatFs}
 
 The main loop still reads ADXL and prints UART telemetry, but SD file operations are
-centralized in \texttt{fatfs\_log\_init()} and \texttt{fatfs\_log\_append\_line()}.
+centralized in \texttt{fatfs\_fopen()} and \texttt{fatfs\_fprintf()}.
 
 \begin{lstlisting}[style=cstyle,caption={Main FatFs logging flow (condensed from src/main.c)}]
 if (!system_init()) {
@@ -41,7 +41,8 @@ if (!system_init()) {
   }
 }
 
-bool sd_logging_enabled = fatfs_log_init();
+fatfs_log_file_t log_file = {0};
+bool sd_logging_enabled = fatfs_fopen(&log_file, 0);
 if (!sd_logging_enabled) {
   while (1) {
     printf("FatFs logger init failed\n");
@@ -57,7 +58,7 @@ while (1) {
 
   if (n > 0) {
     printf("sample=%" PRIu32 " ...\n", ...); // UART remains active
-    if (sd_logging_enabled && !fatfs_log_append_line(line)) {
+    if (sd_logging_enabled && !fatfs_fprintf(&log_file, line)) {
       printf("FatFs write failed; disabling SD logging\n");
       sd_logging_enabled = false;
     }
