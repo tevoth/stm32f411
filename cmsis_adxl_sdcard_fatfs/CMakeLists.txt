@@ -107,7 +107,7 @@ target_compile_options(${TARGET_NAME}.elf PRIVATE
 set(STM32F411xE ON CACHE BOOL "turn on F411xE")
 target_compile_definitions(${TARGET_NAME}.elf PRIVATE
   FATFS_LOG_PATH=\"0:adxl_log.csv\"
-  FATFS_LOG_HEADER=\"sample,ax_mg,ay_mg,az_mg\\r\\n\"
+  FATFS_LOG_HEADER=\"time_ms,ax_mg,ay_mg,az_mg\\r\\n\"
   SPI1_CFG_CPOL=1
   SPI1_CFG_CPHA=1
   SPI1_CFG_MISO_PULLUP=0

@@ -36,7 +36,7 @@ int main(void) {
     printf("microSD FAT32 init FAILED, continuing with UART only\n");
   }
 
-  uint32_t sample_index = 0U;
+  uint32_t elapsed_ms = 0U;
 
   while (1) {
     led_toggle();
@@ -53,35 +53,35 @@ int main(void) {
       case MAX6675_STATUS_OK: {
         int32_t temp_c_x100 = max6675_temp_c_x100(raw);
         uart_n = snprintf(uart_line, sizeof(uart_line),
-          "sample=%" PRIu32 ", temp=%" PRId32 ".%02" PRId32 " C (raw=0x%04X)\n",
-          sample_index, temp_c_x100 / 100, temp_c_x100 % 100, (unsigned)raw);
+          "t=%" PRIu32 "ms, temp=%" PRId32 ".%02" PRId32 " C (raw=0x%04X)\n",
+          elapsed_ms, temp_c_x100 / 100, temp_c_x100 % 100, (unsigned)raw);
         csv_n = snprintf(csv_line, sizeof(csv_line),
-          "%" PRIu32 ",ok,%" PRId32 ",0x%04X\r\n",
-          sample_index, temp_c_x100, (unsigned)raw);
+          "%" PRIu32 ",%" PRId32 "\r\n",
+          elapsed_ms, temp_c_x100);
       } break;
 
       case MAX6675_STATUS_THERMOCOUPLE_OPEN:
         uart_n = snprintf(uart_line, sizeof(uart_line),
-          "sample=%" PRIu32 ", fault=open (raw=0x%04X)\n",
-          sample_index, (unsigned)raw);
+          "t=%" PRIu32 "ms, fault=open (raw=0x%04X)\n",
+          elapsed_ms, (unsigned)raw);
         csv_n = snprintf(csv_line, sizeof(csv_line),
-          "%" PRIu32 ",open,,0x%04X\r\n",
-          sample_index, (unsigned)raw);
+          "%" PRIu32 ",\r\n",
+          elapsed_ms);
         break;
 
       case MAX6675_STATUS_BUS_INVALID:
         uart_n = snprintf(uart_line, sizeof(uart_line),
-          "sample=%" PRIu32 ", fault=bus_invalid\n", sample_index);
+          "t=%" PRIu32 "ms, fault=bus_invalid\n", elapsed_ms);
         csv_n = snprintf(csv_line, sizeof(csv_line),
-          "%" PRIu32 ",bus_invalid,,\r\n", sample_index);
+          "%" PRIu32 ",\r\n", elapsed_ms);
         break;
 
       case MAX6675_STATUS_TIMEOUT:
       default:
         uart_n = snprintf(uart_line, sizeof(uart_line),
-          "sample=%" PRIu32 ", fault=timeout\n", sample_index);
+          "t=%" PRIu32 "ms, fault=timeout\n", elapsed_ms);
         csv_n = snprintf(csv_line, sizeof(csv_line),
-          "%" PRIu32 ",timeout,,\r\n", sample_index);
+          "%" PRIu32 ",\r\n", elapsed_ms);
         break;
     }
 
@@ -98,9 +98,9 @@ int main(void) {
       }
     }
 
-    sample_index++;
     // MAX6675 updates roughly every 220 ms.
     systick_msec_delay(250);
+    elapsed_ms += 250U;
   }
 
   return 0;

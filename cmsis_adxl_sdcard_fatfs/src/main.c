@@ -44,14 +44,15 @@ int main(void) {
     }
   }
 
-  uint32_t sample_index = 0U;
+  uint32_t elapsed_ms = 0U;
 
   while (1) {
     led_toggle();
 
     if (!adxl_read(ADXL345_REG_DATA_START, adxl_raw)) {
-      printf("ADXL345 read timeout\n");
+      printf("t=%" PRIu32 "ms ADXL345 read timeout\n", elapsed_ms);
       systick_msec_delay(100);
+      elapsed_ms += 100U;
       continue;
     }
 
@@ -68,12 +69,12 @@ int main(void) {
     char line[LOG_LINE_BUF_SZ];
     int n = snprintf(line, sizeof(line),
       "%" PRIu32 ",%" PRId32 ",%" PRId32 ",%" PRId32 "\r\n",
-      sample_index, ax_mg, ay_mg, az_mg);
+      elapsed_ms, ax_mg, ay_mg, az_mg);
 
     if (n > 0) {
       // UART monitoring stays active while logging to SD.
-      printf("sample=%" PRIu32 " ax=%" PRId32 "mg ay=%" PRId32 "mg az=%" PRId32 "mg\n",
-        sample_index, ax_mg, ay_mg, az_mg);
+      printf("t=%" PRIu32 "ms ax=%" PRId32 "mg ay=%" PRId32 "mg az=%" PRId32 "mg\n",
+        elapsed_ms, ax_mg, ay_mg, az_mg);
 
       if (sd_logging_enabled) {
         if (!fatfs_fprintf(&log_file, line)) {
@@ -83,8 +84,8 @@ int main(void) {
       }
     }
 
-    sample_index++;
     systick_msec_delay(100);
+    elapsed_ms += 100U;
   }
 
   // Not reached in this demo.

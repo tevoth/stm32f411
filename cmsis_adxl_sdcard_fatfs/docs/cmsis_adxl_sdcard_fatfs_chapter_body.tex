@@ -57,7 +57,7 @@ while (1) {
   int n = snprintf(line, sizeof(line), "%" PRIu32 ",%" PRId32 ",%" PRId32 ",%" PRId32 "\r\n", ...);
 
   if (n > 0) {
-    printf("sample=%" PRIu32 " ...\n", ...); // UART remains active
+    printf("t=%" PRIu32 "ms ...\n", ...); // UART remains active
     if (sd_logging_enabled && !fatfs_fprintf(&log_file, line)) {
       printf("FatFs write failed; disabling SD logging\n");
       sd_logging_enabled = false;
@@ -175,8 +175,8 @@ if (!sd_parse_sector_count_from_csd(csd, &sd_sector_count)) return false;
 Because this project writes through FatFs, the card remains host-friendly:
 \begin{itemize}[leftmargin=*]
 \item file: \texttt{adxl\_log.csv}
-\item header: \texttt{sample,ax\_mg,ay\_mg,az\_mg}
-\item rows: one sample per line with CRLF endings
+\item header: \texttt{time\_ms,ax\_mg,ay\_mg,az\_mg}
+\item rows: one timestamped sample per line with CRLF endings
 \end{itemize}
 
 That means you can remove the card and open the file directly in spreadsheet or analysis tools,
