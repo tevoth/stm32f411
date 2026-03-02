@@ -15,6 +15,7 @@ cmake --build /tmp/build_cmsis_max6675_sdcard_fatfs
 
 ## Runtime behavior
 
-- On success, firmware mounts `0:` and appends lines to `max6675_log.csv`.
+- On success, firmware mounts `0:` and appends lines to `max6675.csv`.
 - UART stays active for live monitoring.
-- File data is synced periodically in `fatfs_log.c`.
+- File logging is implemented in the shared module at `shared/fatfs_log_common/src/fatfs_log.c`.
+- File data is synced periodically to reduce power-loss risk.
