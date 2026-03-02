@@ -56,7 +56,7 @@ int main(void) {
           "t=%" PRIu32 "ms, temp=%" PRId32 ".%02" PRId32 " C (raw=0x%04X)\n",
           elapsed_ms, temp_c_x100 / 100, temp_c_x100 % 100, (unsigned)raw);
         csv_n = snprintf(csv_line, sizeof(csv_line),
-          "%" PRIu32 ",ok,%" PRId32 "\r\n",
+          "%" PRIu32 ",%" PRId32 "\r\n",
           elapsed_ms, temp_c_x100);
       } break;
 
@@ -65,7 +65,7 @@ int main(void) {
           "t=%" PRIu32 "ms, fault=open (raw=0x%04X)\n",
           elapsed_ms, (unsigned)raw);
         csv_n = snprintf(csv_line, sizeof(csv_line),
-          "%" PRIu32 ",open,\r\n",
+          "%" PRIu32 ",\r\n",
           elapsed_ms);
         break;
 
@@ -73,7 +73,7 @@ int main(void) {
         uart_n = snprintf(uart_line, sizeof(uart_line),
           "t=%" PRIu32 "ms, fault=bus_invalid\n", elapsed_ms);
         csv_n = snprintf(csv_line, sizeof(csv_line),
-          "%" PRIu32 ",bus_invalid,\r\n", elapsed_ms);
+          "%" PRIu32 ",\r\n", elapsed_ms);
         break;
 
       case MAX6675_STATUS_TIMEOUT:
@@ -81,7 +81,7 @@ int main(void) {
         uart_n = snprintf(uart_line, sizeof(uart_line),
           "t=%" PRIu32 "ms, fault=timeout\n", elapsed_ms);
         csv_n = snprintf(csv_line, sizeof(csv_line),
-          "%" PRIu32 ",timeout,\r\n", elapsed_ms);
+          "%" PRIu32 ",\r\n", elapsed_ms);
         break;
     }
 

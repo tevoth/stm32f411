@@ -16,7 +16,7 @@ cmake --build /tmp/build_cmsis_max6675_sdcard_fatfs
 ## Runtime behavior
 
 - On success, firmware mounts `0:` and appends lines to `max6675.csv`.
-- CSV columns are `time_ms,status,temp_c_x100` (no sample index or raw value).
+- CSV columns are `time_ms,temp_c_x100` (no sample index, status, or raw value).
 - UART stays active for live monitoring.
 - File logging is implemented in the shared module at `shared/fatfs_log_common/src/fatfs_log.c`.
 - App code uses a handle-based logger API (`fatfs_fopen`, `fatfs_fprintf`) for file-like writes.
