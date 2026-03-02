@@ -5,8 +5,17 @@
 
 #include "fatfs/ff.h"
 
+#ifndef FATFS_LOG_SYNC_PERIOD
 #define FATFS_LOG_SYNC_PERIOD 10U
-#define FATFS_LOG_PATH "0:max6675.csv"
+#endif
+
+#ifndef FATFS_LOG_PATH
+#define FATFS_LOG_PATH "0:log.csv"
+#endif
+
+#ifndef FATFS_LOG_HEADER
+#define FATFS_LOG_HEADER "sample,value\r\n"
+#endif
 
 static FATFS fs;
 static FIL file;
@@ -25,7 +34,7 @@ bool fatfs_log_init(void) {
   }
 
   if (f_size(&file) == 0U) {
-    const char *header = "sample,status,temp_c_x100,raw_hex\r\n";
+    const char *header = FATFS_LOG_HEADER;
     UINT bw = 0U;
     UINT expected = (UINT)strlen(header);
 

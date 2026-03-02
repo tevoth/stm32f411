@@ -28,6 +28,8 @@ set(SHARED_ADC_DIR          ${CMAKE_SOURCE_DIR}/../shared/adc)
 set(SHARED_SPI1_CORE_DIR    ${CMAKE_SOURCE_DIR}/../shared/spi1_core)
 set(SHARED_SPI2_SD_DIR      ${CMAKE_SOURCE_DIR}/../shared/spi2_sd)
 set(SHARED_SDCARD_SPI_DIR   ${CMAKE_SOURCE_DIR}/../shared/sdcard_spi)
+set(SHARED_FATFS_CORE_DIR   ${CMAKE_SOURCE_DIR}/../shared/fatfs_core)
+set(SHARED_FATFS_LOG_DIR    ${CMAKE_SOURCE_DIR}/../shared/fatfs_log_common)
 set(SHARED_SPI_COMMON_DIR   ${CMAKE_SOURCE_DIR}/../shared/spi_common)
 set(LINKER_SCRIPT  ${SHARED_LD_DIR}/stm32_flash.ld)
 
@@ -64,11 +66,13 @@ target_sources(${TARGET_NAME}.elf PRIVATE
   ${SHARED_ADC_DIR}/src/adc.c
   ${SHARED_SPI2_SD_DIR}/src/spi2_sd.c
   ${SHARED_SDCARD_SPI_DIR}/src/sdcard_spi.c
+  ${SHARED_FATFS_CORE_DIR}/src/ff.c
+  ${SHARED_FATFS_CORE_DIR}/src/diskio_port.c
+  ${SHARED_FATFS_LOG_DIR}/src/fatfs_log.c
 )
 
 target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${CMAKE_SOURCE_DIR}/inc
-  ${CMAKE_SOURCE_DIR}/inc/fatfs
   ${SHARED_LED_DIR}/inc
   ${SHARED_SYSTEM_INIT_DIR}/inc
   ${SHARED_SYSTICK_DIR}/inc
@@ -78,6 +82,9 @@ target_include_directories(${TARGET_NAME}.elf PUBLIC
   ${SHARED_SPI1_CORE_DIR}/inc
   ${SHARED_SPI2_SD_DIR}/inc
   ${SHARED_SDCARD_SPI_DIR}/inc
+  ${SHARED_FATFS_CORE_DIR}/inc
+  ${SHARED_FATFS_CORE_DIR}/inc/fatfs
+  ${SHARED_FATFS_LOG_DIR}/inc
   ${SHARED_SPI_COMMON_DIR}/inc
   ${CMAKE_SOURCE_DIR}/../CMSIS/Include
   ${CMAKE_SOURCE_DIR}/../CMSIS/Device/ST/STM32F4xx/Include
@@ -99,6 +106,8 @@ target_compile_options(${TARGET_NAME}.elf PRIVATE
 # turn on/off STM32F411xE compile (will fail if off!)
 set(STM32F411xE ON CACHE BOOL "turn on F411xE")
 target_compile_definitions(${TARGET_NAME}.elf PRIVATE
+  FATFS_LOG_PATH=\"0:adxl_log.csv\"
+  FATFS_LOG_HEADER=\"sample,ax_mg,ay_mg,az_mg\\r\\n\"
   SPI1_CFG_CPOL=1
   SPI1_CFG_CPHA=1
   SPI1_CFG_MISO_PULLUP=0
